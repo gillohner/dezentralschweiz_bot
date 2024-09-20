@@ -7,7 +7,7 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
 const naddrList = [
   'naddr1qqyrjv33x9jk2enxqyxhwumn8ghj7mn0wvhxcmmvqgsp2c6tc2q02wd68met3q8jm098r45nppxejw2rf0eaa7v3ns8k24grqsqqql95ndwg6z',
-  // Add more naddrs here
+  'naddr1qqyx2vnz8q6kzepcqydhwumn8ghj7mn0wd68ytnnwa5hxuedv4hxjemdvyhxx6qzype0mzc70u2hn9c5sg7rh4079tg3f9s7l79n4mxsx0uexgfehqtp7qcyqqq8edqkz67k8',
 ];
 
 const defaultRelays = [
