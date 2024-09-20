@@ -174,57 +174,67 @@ bot.onText(/\/start/, (msg) => {
 });
 
 bot.onText(/\/meetups/, async (msg) => {
-  const chatId = msg.chat.id;
-  
-  console.log('Fetching calendar events...');
-  try {
-    bot.sendMessage(chatId, 'Fetching upcoming events, please wait...');
+    const chatId = msg.chat.id;
     
-    let allEvents = [];
-    for (const naddr of naddrList) {
-      const decoded = nip19.decode(naddr);
-      const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
-      const { calendarName, events } = await fetchCalendarEvents(calendarId);
-      allEvents.push({ calendarName, events });
-    }
-    
-    if (allEvents.every(cal => cal.events.length === 0)) {
-      bot.sendMessage(chatId, 'No upcoming events found in any calendar.');
-      return;
-    }
-
-    let message = '🗓 *Upcoming Events*\n\n';
-    
-    allEvents.forEach(({ calendarName, events }) => {
-      if (events.length > 0) {
-        message += `*${calendarName}*\n\n`;
-        
-        events.sort((a, b) => {
-          const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0');
-          const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0');
-          return aStart - bStart;
-        });
-        
-        events.forEach((event, index) => {
-          const title = event.tags.find(t => t[0] === 'name')?.[1] || 'Untitled Event';
-          const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
-          const location = event.tags.find(t => t[0] === 'location')?.[1] || 'No location specified';
-          
-          message += `${index + 1}. 🎉 *${title}*\n`;
-          message += `   🕒 Date: ${start.toLocaleString()}\n`;
-          message += `   📍 Location: ${location}\n\n`;
-        });
-        
-        message += '\n';
+    console.log('Fetching calendar events...');
+    try {
+      bot.sendMessage(chatId, 'Fetching upcoming events, please wait...');
+      
+      let allEvents = [];
+      for (const naddr of naddrList) {
+        const decoded = nip19.decode(naddr);
+        const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
+        const { calendarName, events } = await fetchCalendarEvents(calendarId);
+        allEvents.push({ calendarName, events });
       }
-    });
-    
-    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-  } catch (error) {
-    console.error('Error in /meetups command:', error);
-    bot.sendMessage(chatId, 'An error occurred while fetching events. Please try again later.');
-  }
-});
+      
+      if (allEvents.every(cal => cal.events.length === 0)) {
+        bot.sendMessage(chatId, 'No upcoming events found in any calendar.');
+        return;
+      }
+  
+      let message = '🗓 *Upcoming Events*\n\n';
+      
+      allEvents.forEach(({ calendarName, events }) => {
+        if (events.length > 0) {
+          message += `*${calendarName}*\n\n`;
+          
+          // Deduplicate events based on their unique identifiers
+          const uniqueEvents = events.reduce((acc, event) => {
+            const eventId = event.id;
+            if (!acc.some(e => e.id === eventId)) {
+              acc.push(event);
+            }
+            return acc;
+          }, []);
+          
+          // Sort events by start time
+          uniqueEvents.sort((a, b) => {
+            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0');
+            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0');
+            return aStart - bStart;
+          });
+          
+          uniqueEvents.forEach((event, index) => {
+            const title = event.tags.find(t => t[0] === 'name')?.[1] || 'Untitled Event';
+            const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
+            const location = event.tags.find(t => t[0] === 'location')?.[1] || 'No location specified';
+            
+            message += `${index + 1}. 🎉 *${title}*\n`;
+            message += `   🕒 Date: ${start.toLocaleString()}\n`;
+            message += `   📍 Location: ${location}\n\n`;
+          });
+          
+          message += '\n';
+        }
+      });
+      
+      bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('Error in /meetups command:', error);
+      bot.sendMessage(chatId, 'An error occurred while fetching events. Please try again later.');
+    }
+});  
 
 async function main() {
   console.log('Bot is starting...');
