@@ -38,7 +38,6 @@ To set up the Dezentralschweiz Bot, follow these steps:
 3. **Run the Bot**
    ```bash
    node bot.js
-
 ## Usage
 - Start a chat with your bot on Telegram.
 - Use /start to receive a welcome message.
