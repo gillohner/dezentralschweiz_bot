@@ -4,18 +4,8 @@ const { nip19 } = require('nostr-tools');
 const WebSocket = require('ws');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
-
-const naddrList = [
-  'naddr1qqyrjv33x9jk2enxqyxhwumn8ghj7mn0wvhxcmmvqgsp2c6tc2q02wd68met3q8jm098r45nppxejw2rf0eaa7v3ns8k24grqsqqql95ndwg6z',
-  'naddr1qqyx2vnz8q6kzepcqydhwumn8ghj7mn0wd68ytnnwa5hxuedv4hxjemdvyhxx6qzype0mzc70u2hn9c5sg7rh4079tg3f9s7l79n4mxsx0uexgfehqtp7qcyqqq8edqkz67k8',
-];
-
-const defaultRelays = [
-  'wss://nos.lol',
-  'wss://relay.damus.io',
-  'wss://relay.nostr.band',
-  'wss://relay.riginode.xyz',
-];
+const naddrList = process.env.NADDR_LIST.split(',');
+const defaultRelays = process.env.DEFAULT_RELAYS.split(',');
 
 function escapeHTML(text) {
   return text.replace(/&/g, '&amp;')
@@ -155,7 +145,7 @@ async function fetchEventsDirectly(filter) {
   return events;
 }
 
-bot.onText(/\/start/, (msg) => {
+bot.onText(\/start/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, 'Willkommen beim Dezentralschweiz Bot! Verwende /meetups, um bevorstehende Meetups zu sehen.');
 });
