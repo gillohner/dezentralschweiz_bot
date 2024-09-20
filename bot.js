@@ -1,14 +1,13 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const NDK = require('@nostr-dev-kit/ndk').default;
 const { nip19 } = require('nostr-tools');
 const WebSocket = require('ws');
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {polling: true});
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
 const naddrList = [
   'naddr1qqyrjv33x9jk2enxqyxhwumn8ghj7mn0wvhxcmmvqgsp2c6tc2q02wd68met3q8jm098r45nppxejw2rf0eaa7v3ns8k24grqsqqql95ndwg6z',
-  'naddr1qqyx2vnz8q6kzepcqyxhwumn8ghj7mn0wvhxcmmvqgs89lvtrel327vhzjprcw74lc4dz9ykrmlckwhv6qelnyep8xupv8crqsqqql95xnfnze',
+  // Add more naddrs here
 ];
 
 const defaultRelays = [
@@ -18,19 +17,11 @@ const defaultRelays = [
   'wss://relay.riginode.xyz',
 ];
 
-const ndk = new NDK({
-  explicitRelayUrls: defaultRelays,
-});
-
-async function connectToRelays() {
-  try {
-    await ndk.connect();
-    console.log('Connected to relays:', defaultRelays);
-    return true;
-  } catch (error) {
-    console.error('Failed to connect to relays:', error);
-    return false;
-  }
+function escapeHTML(text) {
+  return text.replace(/&/g, '&amp;')
+             .replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/"/g, '&quot;');
 }
 
 async function fetchEventDirectly(filter) {
@@ -75,7 +66,7 @@ async function fetchEventDirectly(filter) {
   return null;
 }
 
-async function fetchCalendarEvents(calendarId) {
+async function fetchCalendarEvents(calendarId, naddr) {
   console.log(`Fetching events for calendar: ${calendarId}`);
   const [kind, pubkey, identifier] = calendarId.split(':');
 
@@ -118,10 +109,10 @@ async function fetchCalendarEvents(calendarId) {
     console.log('Fetching events with filter:', eventsFilter);
     const events = await fetchEventsDirectly(eventsFilter);
     console.log(`Fetched ${events.length} events for calendar ${calendarId}`);
-    return { calendarName: calendarEvent.tags.find(t => t[0] === 'name')?.[1] || 'Unbenannter Kalender', events };
+    return { calendarName: calendarEvent.tags.find(t => t[0] === 'name')?.[1] || 'Unbenannter Kalender', events, naddr };
   } catch (error) {
     console.error(`Error fetching events for calendar ${calendarId}:`, error);
-    return { calendarName: 'Unbekannter Kalender', events: [] };
+    return { calendarName: 'Unbekannter Kalender', events: [], naddr };
   }
 }
 
@@ -170,82 +161,75 @@ bot.onText(/\/start/, (msg) => {
 });
 
 bot.onText(/\/meetups/, async (msg) => {
-    const chatId = msg.chat.id;
-    
-    console.log('Fetching calendar events...');
-    try {
-      bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
-      
-      let allEvents = [];
-      for (const naddr of naddrList) {
-        const decoded = nip19.decode(naddr);
-        const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
-        const { calendarName, events } = await fetchCalendarEvents(calendarId);
-        allEvents.push({ calendarName, events, naddr });
-      }
-      
-      if (allEvents.every(cal => cal.events.length === 0)) {
-        bot.sendMessage(chatId, 'Keine bevorstehenden Meetups gefunden.');
-        return;
-      }
+  const chatId = msg.chat.id;
   
-      let message = '🗓 *Bevorstehende Meetups*\n\n';
-      
-      allEvents.forEach(({ calendarName, events, naddr }) => {
-        if (events.length > 0) {
-          const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
-          message += `*[${calendarName}](${calendarUrl})*\n\n`;
-          
-          const uniqueEvents = events.reduce((acc, event) => {
-            const eventId = event.id;
-            if (!acc.some(e => e.id === eventId)) {
-              acc.push(event);
-            }
-            return acc;
-          }, []);
-          
-          uniqueEvents.sort((a, b) => {
-            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0');
-            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0');
-            return aStart - bStart;
-          });
-          
-          uniqueEvents.forEach((event, index) => {
-            const title = event.tags.find(t => t[0] === 'name')?.[1] || 'Unbenanntes Meetup';
-            const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
-            const location = event.tags.find(t => t[0] === 'location')?.[1] || 'Kein Ort angegeben';
-            const eventNaddr = nip19.naddrEncode({
-              kind: event.kind,
-              pubkey: event.pubkey,
-              identifier: event.tags.find(t => t[0] === 'd')?.[1] || '',
-              relays: ['wss://nos.lol']  // You might want to use a more appropriate relay
-            });
-            const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
-            
-            message += `${index + 1}. 🎉 *[${title}](${eventUrl})*\n`;
-            message += `   🕒 Datum: ${start.toLocaleString('de-CH')}\n`;
-            message += `   📍 Ort: ${location}\n\n`;
-          });
-          
-          message += '\n';
-        }
-      });
-      
-      bot.sendMessage(chatId, message, { parse_mode: 'Markdown', disable_web_page_preview: true });
-    } catch (error) {
-      console.error('Error in /meetups command:', error);
-      bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
+  console.log('Fetching calendar events...');
+  try {
+    bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
+    
+    let allEvents = [];
+    for (const naddr of naddrList) {
+      const decoded = nip19.decode(naddr);
+      const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
+      const { calendarName, events } = await fetchCalendarEvents(calendarId, naddr);
+      allEvents.push({ calendarName, events, naddr });
     }
-});  
+    
+    if (allEvents.every(cal => cal.events.length === 0)) {
+      bot.sendMessage(chatId, 'Keine bevorstehenden Meetups gefunden.');
+      return;
+    }
+
+    let message = '<b>🗓 Bevorstehende Meetups</b>\n\n';
+    
+    allEvents.forEach(({ calendarName, events, naddr }) => {
+      if (events.length > 0) {
+        const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
+        message += `📅 <a href="${calendarUrl}">${escapeHTML(calendarName)}</a>\n\n`;
+        
+        const uniqueEvents = events.reduce((acc, event) => {
+          const eventId = event.id;
+          if (!acc.some(e => e.id === eventId)) {
+            acc.push(event);
+          }
+          return acc;
+        }, []);
+        
+        uniqueEvents.sort((a, b) => {
+          const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0');
+          const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0');
+          return aStart - bStart;
+        });
+        
+        uniqueEvents.forEach((event, index) => {
+          const title = escapeHTML(event.tags.find(t => t[0] === 'name')?.[1] || 'Unbenanntes Meetup');
+          const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
+          const location = escapeHTML(event.tags.find(t => t[0] === 'location')?.[1] || 'Kein Ort angegeben');
+          const eventNaddr = nip19.naddrEncode({
+            kind: event.kind,
+            pubkey: event.pubkey,
+            identifier: event.tags.find(t => t[0] === 'd')?.[1] || '',
+          });
+          const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
+          
+          message += `${index + 1}. 🎉 <a href="${eventUrl}">${title}</a>\n`;
+          message += `   🕒 Datum: ${start.toLocaleString('de-CH')}\n`;
+          message += `   📍 Ort: ${location}\n\n`;
+        });
+        
+        message += '\n';
+      }
+    });
+    
+    bot.sendMessage(chatId, message, { parse_mode: 'HTML', disable_web_page_preview: true });
+  } catch (error) {
+    console.error('Error in /meetups command:', error);
+    bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
+  }
+});
 
 async function main() {
   console.log('Bot is starting...');
-  const connected = await connectToRelays();
-  if (connected) {
-    console.log('Bot is ready to receive commands.');
-  } else {
-    console.error('Failed to connect to relays. Bot may not function correctly.');
-  }
 }
 
 main();
