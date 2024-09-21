@@ -121,14 +121,14 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
     return allEvents.map(calendar => ({
         ...calendar,
         events: calendar.events.filter(event => {
-            const eventDate = new Date(event.start);
+            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
             switch (timeFrame) {
                 case 'today':
-                    return eventDate <= endOfDay;
+                    return eventDate >= now && eventDate <= endOfDay;
                 case 'week':
-                    return eventDate <= endOfWeek;
+                    return eventDate >= now && eventDate <= endOfWeek;
                 case 'month':
-                    return eventDate <= endOfMonth;
+                    return eventDate >= now && eventDate <= endOfMonth;
                 default:
                     return true;
             }
@@ -142,14 +142,18 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     try {
         await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
         let allEvents = [];
+
+        // Log NADDRs being processed
+        console.log('NADDR_LIST:', config.NADDR_LIST);
+
         for (const naddr of config.NADDR_LIST) {
-            const decoded = nip19.decode(naddr);
-            const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
-            const result = await fetchCalendarEvents(calendarId, naddr);
+            console.log(`Fetching events for calendar: ${naddr}`);
+            const result = await fetchCalendarEvents(naddr);
             if (result && result.calendarName) {
                 allEvents.push(result);
+                console.log(`Fetched events for calendar: ${result.calendarName}`);
             } else {
-                console.error(`Failed to fetch calendar events for ${calendarId}`);
+                console.error(`Failed to fetch calendar events for ${naddr}`);
             }
         }
 
@@ -184,6 +188,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
     }
 };
+
 
 const handleMeetups = async (bot, msg) => {
     const chatId = msg.chat.id;

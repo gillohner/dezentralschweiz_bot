@@ -93,28 +93,29 @@ const fetchEventDirectly = async (filter) => {
     return null;
 };
 
-const fetchCalendarEvents = async (calendarId, naddr) => {
-    console.log(`Fetching events for calendar: ${calendarId}`);
-    const [kind, pubkey, identifier] = calendarId.split(':');
+async function fetchCalendarEvents(calendarNaddr) {
+    console.log(`Fetching events for calendar: ${calendarNaddr}`);
+    const decoded = nip19.decode(calendarNaddr);
     const calendarFilter = {
-        kinds: [parseInt(kind)],
-        authors: [pubkey],
-        "#d": [identifier],
+        kinds: [31924],
+        authors: [decoded.data.pubkey],
+        "#d": [decoded.data.identifier],
     };
 
     try {
         console.log('Fetching calendar event with filter:', calendarFilter);
         const calendarEvent = await fetchEventDirectly(calendarFilter);
         if (!calendarEvent) {
-            console.error(`Calendar event not found for ${calendarId}`);
+            console.error(`Calendar event not found for ${calendarNaddr}`);
             return {
                 calendarName: 'Unbekannter Kalender',
                 events: [],
-                naddr
+                naddr: calendarNaddr
             };
         }
 
         console.log('Calendar event found:', calendarEvent);
+        // Ensure only relevant events are fetched
         const eventReferences = calendarEvent.tags
             .filter(tag => tag[0] === 'a')
             .map(tag => {
@@ -127,31 +128,30 @@ const fetchCalendarEvents = async (calendarId, naddr) => {
                 };
             });
 
-        console.log('Event references:', eventReferences);
         if (eventReferences.length === 0) {
             return {
                 calendarName: calendarEvent.tags.find(t => t[0] === 'name')?. [1] || 'Unbenannter Kalender',
                 events: [],
-                naddr
+                naddr: calendarNaddr
             };
         }
 
         const events = await fetchEvents(eventReferences);
-        console.log(`Fetched ${events.length} events for calendar ${calendarId}`);
+        console.log(`Fetched ${events.length} events for calendar ${calendarNaddr}`);
         return {
             calendarName: calendarEvent.tags.find(t => t[0] === 'name')?. [1] || 'Unbenannter Kalender',
             events,
-            naddr
+            naddr: calendarNaddr
         };
     } catch (error) {
-        console.error(`Error fetching events for calendar ${calendarId}:`, error);
+        console.error(`Error fetching events for calendar ${calendarNaddr}:`, error);
         return {
             calendarName: 'Unbekannter Kalender',
             events: [],
-            naddr
+            naddr: calendarNaddr
         };
     }
-};
+}
 
 const fetchEvents = async (eventReferences) => {
     console.log('Fetching events for references:', eventReferences);
