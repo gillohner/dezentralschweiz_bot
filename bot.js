@@ -20,7 +20,7 @@ bot.onText(/\/links/, (msg) => {
   };
   bot.sendMessage(chatId, 'Wähle eine Kategorie:', { reply_markup: JSON.stringify(keyboard) });
 });
-bot.onText(/\/event_vorschlagen/, (msg) => {
+bot.onText(/\/meetup_vorschlagen/, (msg) => {
   const chatId = msg.chat.id;
   startEventSuggestion(bot, chatId);
 });
@@ -39,7 +39,7 @@ bot.on('callback_query', async (callbackQuery) => {
   if (action.startsWith('links_')) {
     const category = action.split('_')[1];
     const links = communityLinks[category];
-    let message = `${category}:\n\n`;
+    let message = `<b>${category}:</b>\n\n`;
     links.forEach(link => {
       message += `${link.name}\n${link.url}\n\n`;
     });

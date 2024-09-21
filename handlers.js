@@ -15,7 +15,29 @@ const {
 
 async function handleStart(bot, msg) {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Willkommen beim Dezentralschweiz Bot! Verwende /meetups, um bevorstehende Meetups zu sehen.');
+    const message = `
+<b>Willkommen beim Dezentralschweiz Bot! 🇨🇭</b>
+
+Hier sind die verfügbaren Befehle:
+
+/meetups - <i>Zeige bevorstehende Meetups</i>
+Erhalte eine Liste aller anstehenden Veranstaltungen in der Dezentralschweiz Community.
+
+/links - <i>Zeige Community-Links</i>
+Entdecke wichtige Links und Ressourcen unserer Community.
+
+/meetup_vorschlagen - <i>Schlage ein neues Event vor</i>
+Möchtest du ein Meetup organisieren? Nutze diesen Befehl, um dein Event vorzuschlagen.
+
+/refresh_commands - <i>Aktualisiere die Befehlsliste</i>
+Aktualisiere die Liste der verfügbaren Befehle, falls Änderungen vorgenommen wurden.
+
+Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir gerne zur Verfügung.
+`;
+
+    await bot.sendMessage(chatId, message, {
+        parse_mode: 'HTML'
+    });
 }
 
 async function handleMeetups(bot, msg) {
@@ -49,7 +71,6 @@ async function handleMeetups(bot, msg) {
         const message = formatMeetupsMessage(allEvents);
 
         if (message.length > 4096) {
-            // If the message is too long, split it into multiple messages
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
                 await bot.sendMessage(chatId, chunk, {
@@ -73,10 +94,10 @@ async function handleRefreshCommands(bot, msg) {
     const chatId = msg.chat.id;
     try {
         await setupCommands(bot);
-        bot.sendMessage(chatId, 'Commands refreshed successfully!');
+        bot.sendMessage(chatId, 'Befehle wurden erfolgreich aktualisiert!');
     } catch (error) {
         console.error('Error refreshing commands:', error);
-        bot.sendMessage(chatId, 'An error occurred while refreshing commands. Please try again later.');
+        bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
     }
 }
 

@@ -15,7 +15,7 @@ const commands = [{
         description: 'Zeige Community-Links'
     },
     {
-        command: 'event_vorschlagen',
+        command: 'meetup_vorschlagen',
         description: 'Schlage ein neues Event vor'
     }
 ];
