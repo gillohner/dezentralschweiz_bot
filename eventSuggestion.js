@@ -84,13 +84,13 @@ Möchtest du dieses Event genehmigen?
 async function handleAdminApproval(bot, callbackQuery) {
     const action = callbackQuery.data;
     const adminChatId = callbackQuery.message.chat.id;
-
-    console.log('Admin approval action:', action);
+    const {
+        nip19
+    } = require('nostr-tools');
 
     if (action.startsWith('approve_') || action.startsWith('reject_')) {
         const userChatId = action.split('_')[1];
         const isApproved = action.startsWith('approve_');
-
         console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
         if (isApproved) {
@@ -100,11 +100,21 @@ async function handleAdminApproval(bot, callbackQuery) {
             try {
                 const publishedEvent = await publishEventToNostr(eventDetails);
                 console.log('Event published to Nostr:', publishedEvent);
-                bot.sendMessage(userChatId, 'Dein Event wurde genehmigt und veröffentlicht!');
-              } catch (error) {
+
+                // Generate Flockstr link
+                const eventNaddr = nip19.naddrEncode({
+                    kind: publishedEvent.kind,
+                    pubkey: publishedEvent.pubkey,
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
+                });
+                const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
+
+                // Send approval message with Flockstr link
+                bot.sendMessage(userChatId, `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`);
+            } catch (error) {
                 console.error('Error publishing event to Nostr:', error);
                 bot.sendMessage(userChatId, 'Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator.');
-              }              
+            }
         } else {
             bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
         }
