@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const crypto = require('crypto');
 const config = require('./config');
 const {
     getPublicKey,
@@ -7,6 +8,22 @@ const {
 const {
     nip19
 } = require('nostr-tools');
+
+function sha256(data) {
+    return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+function getEventHash(event) {
+    let serialized = JSON.stringify([
+        0,
+        event.pubkey,
+        event.created_at,
+        event.kind,
+        event.tags,
+        event.content
+    ]);
+    return sha256(serialized);
+}
 
 async function fetchEventDirectly(filter) {
     for (const relay of config.DEFAULT_RELAYS) {
@@ -159,35 +176,51 @@ async function fetchEventsDirectly(filter) {
     }
     return events;
 }
+
 async function publishEventToNostr(eventDetails) {
     console.log('Publishing event to Nostr:', eventDetails);
+
     const privateKey = process.env.BOT_NSEC;
     if (!privateKey) {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
-    const publicKey = getPublicKey(privateKey);
 
+    const publicKey = getPublicKey(privateKey);
     const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
     if (!calendarNaddr) {
         throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
     }
 
     const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
-    const eventId = `${Date.now()}`;
+    const eventId = crypto.randomBytes(16).toString('hex');
 
     let eventTemplate = {
         kind: 31923,
         created_at: Math.floor(Date.now() / 1000),
+        pubkey: publicKey,
+        content: eventDetails.description,
         tags: [
             ['d', eventId],
-            ['title', eventDetails.title],
+            ['name', eventDetails.title],
             ['start', startTimestamp.toString()],
+            ['start_tzid', "Europe/Zurich"],
             ['location', eventDetails.location],
-            ['description', eventDetails.description],
+            ['p', publicKey, '', 'host'],
             ['a', calendarNaddr],
         ],
-        content: '', // NIP-52 suggests using content for backwards compatibility if needed
     };
+
+    if (eventDetails.end_date && eventDetails.end_time) {
+        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
+        eventTemplate.tags.push(['end', endTimestamp.toString()]);
+    }
+
+    if (eventDetails.image) {
+        eventTemplate.tags.push(['image', eventDetails.image]);
+    }
+
+    // Generate the event ID
+    eventTemplate.id = getEventHash(eventTemplate);
 
     // This assigns the pubkey, calculates the event id and signs the event in a single step
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
@@ -235,24 +268,23 @@ async function updateCalendarEvent(newEvent, privateKey) {
     console.log('Updating calendar with ID:', calendarId);
     const decoded = nip19.decode(calendarId);
     console.log('Decoded calendar ID:', decoded);
-
     const calendarFilter = {
         kinds: [31924],
         authors: [decoded.data.pubkey],
         "#d": [decoded.data.identifier],
     };
-
     console.log('Fetching calendar event with filter:', calendarFilter);
     const calendarEvent = await fetchEventDirectly(calendarFilter);
     console.log('Fetched calendar event:', calendarEvent);
 
     if (calendarEvent) {
+        const calendarPubkey = decoded.data.pubkey;
+        calendarEvent.pubkey = calendarPubkey;
         const newEventReference = `31923:${newEvent.pubkey}:${newEvent.tags.find(t => t[0] === 'd')[1]}`;
         calendarEvent.tags.push(['a', newEventReference]);
         calendarEvent.created_at = Math.floor(Date.now() / 1000);
         delete calendarEvent.id;
         delete calendarEvent.sig;
-
         const updatedCalendarEvent = finalizeEvent(calendarEvent, privateKey);
         console.log('Updated calendar event:', updatedCalendarEvent);
 

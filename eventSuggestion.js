@@ -42,24 +42,80 @@ function handleEventCreationStep(bot, msg) {
             break;
         case 'description':
             userStates[chatId].description = text;
-            sendEventForApproval(bot, chatId, userStates[chatId]);
-            delete userStates[chatId];
+            showOptionalFieldsMenu(bot, chatId);
+            break;
+        case 'end_date':
+            userStates[chatId].end_date = text;
+            showOptionalFieldsMenu(bot, chatId);
+            break;
+        case 'image':
+            userStates[chatId].image = text;
+            showOptionalFieldsMenu(bot, chatId);
+            break;
+        case 'about':
+            userStates[chatId].about = text;
+            showOptionalFieldsMenu(bot, chatId);
+            break;
+    }
+}
+
+function showOptionalFieldsMenu(bot, chatId) {
+    const keyboard = {
+        inline_keyboard: [
+            [{
+                text: 'Enddatum hinzufügen',
+                callback_data: 'add_end_date'
+            }],
+            [{
+                text: 'Bild-URL hinzufügen',
+                callback_data: 'add_image'
+            }],
+            [{
+                text: 'Über-Text hinzufügen',
+                callback_data: 'add_about'
+            }],
+            [{
+                text: 'Zur Genehmigung senden',
+                callback_data: 'send_for_approval'
+            }]
+        ]
+    };
+    bot.sendMessage(chatId, 'Möchtest du optionale Felder hinzufügen oder das Event zur Genehmigung senden?', {
+        reply_markup: JSON.stringify(keyboard)
+    });
+}
+
+function handleOptionalField(bot, chatId, field) {
+    userStates[chatId].step = field;
+    switch (field) {
+        case 'end_date':
+            bot.sendMessage(chatId, 'Bitte gib das Enddatum des Events ein (Format: YYYY-MM-DD):');
+            break;
+        case 'image':
+            bot.sendMessage(chatId, 'Bitte gib die URL des Eventbildes ein:');
+            break;
+        case 'about':
+            bot.sendMessage(chatId, 'Bitte gib einen kurzen "Über"-Text für das Event ein:');
             break;
     }
 }
 
 function sendEventForApproval(bot, userChatId, eventDetails) {
     const adminChatId = process.env.ADMIN_CHAT_ID;
-    const message = `
+    let message = `
 Neuer Event-Vorschlag:
 Titel: ${eventDetails.title}
 Datum: ${eventDetails.date}
 Zeit: ${eventDetails.time}
 Ort: ${eventDetails.location}
 Beschreibung: ${eventDetails.description}
+`;
 
-Möchtest du dieses Event genehmigen?
-  `;
+    if (eventDetails.end_date) message += `Enddatum: ${eventDetails.end_date}\n`;
+    if (eventDetails.image) message += `Bild-URL: ${eventDetails.image}\n`;
+    if (eventDetails.about) message += `Über: ${eventDetails.about}\n`;
+
+    message += '\nMöchtest du dieses Event genehmigen?';
 
     const keyboard = {
         inline_keyboard: [
@@ -126,21 +182,31 @@ async function handleAdminApproval(bot, callbackQuery) {
     }
 }
 
+
 function extractEventDetails(messageText) {
-    // Extract event details from the admin approval message
-    // This is a simple implementation and might need to be adjusted based on the exact format of your message
     const lines = messageText.split('\n');
-    return {
+    const details = {
         title: lines[1].split(': ')[1],
         date: lines[2].split(': ')[1],
         time: lines[3].split(': ')[1],
         location: lines[4].split(': ')[1],
         description: lines[5].split(': ')[1],
     };
+
+    lines.slice(6).forEach(line => {
+        if (line.startsWith('Enddatum: ')) details.end_date = line.split(': ')[1];
+        if (line.startsWith('Bild-URL: ')) details.image = line.split(': ')[1];
+        if (line.startsWith('Über: ')) details.about = line.split(': ')[1];
+    });
+
+    return details;
 }
 
 module.exports = {
     startEventSuggestion,
     handleEventCreationStep,
-    handleAdminApproval
+    handleAdminApproval,
+    handleOptionalField,
+    sendEventForApproval,
+    userStates
 };
