@@ -21,7 +21,7 @@ function formatMeetupsMessage(allEvents) {
       const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
       message += `📅 <a href="${calendarUrl}">${escapeHTML(calendarName)}</a>\n\n`;
 
-      const uniqueEvents = eventsßß.reduce((acc, event) => {
+      const uniqueEvents = events.reduce((acc, event) => {
         const eventId = event.id;
         if (!acc.some(e => e.id === eventId)) {
           acc.push(event);
@@ -35,7 +35,7 @@ function formatMeetupsMessage(allEvents) {
         return aStart - bStart;
       });
 
-      uniqueEvents.forEach((event, index) => {
+      uniqueEvents.forEach((event) => {
         const title = escapeHTML(event.tags.find(t => t[0] === 'name')?. [1] || 'Unbenanntes Meetup');
         const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
         const location = escapeHTML(event.tags.find(t => t[0] === 'location')?. [1] || 'Kein Ort angegeben');
@@ -46,7 +46,7 @@ function formatMeetupsMessage(allEvents) {
         });
         const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
 
-        message += `${index + 1}. 🎉 <a href="${eventUrl}">${title}</a>\n`;
+        message += `   🎉 <a href="${eventUrl}">${title}</a>\n`;
         message += `   🕒 Datum: ${start.toLocaleString('de-CH')}\n`;
         message += `   📍 Ort: ${location}\n\n`;
       });

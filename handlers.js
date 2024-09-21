@@ -80,8 +80,14 @@ async function handleRefreshCommands(bot, msg) {
     }
 }
 
+function handleSuggestEvent(bot, msg) {
+    const chatId = msg.chat.id;
+    startEventSuggestion(bot, chatId);
+}
+
 module.exports = {
     handleStart,
     handleMeetups,
-    handleRefreshCommands
+    handleRefreshCommands,
+    handleSuggestEvent
 };

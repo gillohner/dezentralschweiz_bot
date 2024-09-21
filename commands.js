@@ -1,20 +1,25 @@
 const commands = [{
         command: 'start',
-        description: 'Start the bot'
+        description: 'Starte den Bot'
     },
     {
         command: 'meetups',
-        description: 'Show upcoming meetups'
+        description: 'Zeige bevorstehende Meetups'
     },
     {
         command: 'refresh_commands',
-        description: 'Refresh the command list'
+        description: 'Aktualisiere die Befehlsliste'
     },
     {
         command: 'links',
-        description: 'Show community links'
+        description: 'Zeige Community-Links'
     },
+    {
+        command: 'event_vorschlagen',
+        description: 'Schlage ein neues Event vor'
+    }
 ];
+
 
 async function setupCommands(bot) {
     try {
