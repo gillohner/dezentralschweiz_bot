@@ -17,9 +17,11 @@ import {
 } from 'nostr-tools';
 import {
     startEventSuggestion,
+    handleEventCreationStep,
+    handleOptionalField,
+    sendEventForApproval,
     extractEventDetails,
-    userStates,
-    handleEventCreationStep
+    userStates
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
 
