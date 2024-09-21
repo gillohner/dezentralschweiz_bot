@@ -122,10 +122,6 @@ bot.on('callback_query', async (callbackQuery) => {
       bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.");
     }
   }
-
-  if (callbackQuery.data === 'confirm_delete' || callbackQuery.data === 'cancel_delete') {
-    handleDeletionConfirmation(bot, callbackQuery);
-  }
 });
 
 bot.on("polling_error", (error) => {

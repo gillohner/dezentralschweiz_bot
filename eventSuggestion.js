@@ -59,42 +59,7 @@ function handleEventCreationStep(bot, msg) {
             userStates[chatId].about = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
-        case 'awaiting_event_id_for_deletion':
-            handleDeletionRequest(bot, chatId, text);
-            break;
     }
-}
-
-function handleDeletionRequest(bot, chatId, eventIdentifier) {
-    // Here you would typically validate the event identifier and fetch event details
-    // For this example, we'll assume it's valid and send it for admin approval
-    const adminChatId = process.env.ADMIN_CHAT_ID;
-    const message = `
-  Löschungsanfrage für Event:
-  Event-ID/Link: ${eventIdentifier}
-  
-  Möchten Sie dieses Event löschen?
-    `;
-
-    const keyboard = {
-        inline_keyboard: [
-            [{
-                    text: 'Löschen',
-                    callback_data: `delete_${eventIdentifier}`
-                },
-                {
-                    text: 'Ablehnen',
-                    callback_data: `reject_delete_${eventIdentifier}`
-                }
-            ]
-        ]
-    };
-
-    bot.sendMessage(adminChatId, message, {
-        reply_markup: JSON.stringify(keyboard)
-    });
-    bot.sendMessage(chatId, 'Deine Löschungsanfrage wurde zur Überprüfung an die Administratoren gesendet. Wir werden dich benachrichtigen, sobald eine Entscheidung getroffen wurde.');
-    delete userStates[chatId];
 }
 
 function showOptionalFieldsMenu(bot, chatId) {
