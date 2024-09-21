@@ -59,6 +59,100 @@ function handleEventCreationStep(bot, msg) {
             userStates[chatId].about = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
+        case 'awaiting_event_id_for_deletion':
+            handleDeletionRequest(bot, chatId, text);
+            break;
+    }
+}
+
+function handleDeletionRequest(bot, chatId, eventIdentifier) {
+    // Here you would typically validate the event identifier and fetch event details
+    // For this example, we'll assume it's valid and send it for admin approval
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    const message = `
+  Löschungsanfrage für Event:
+  Event-ID/Link: ${eventIdentifier}
+  
+  Möchten Sie dieses Event löschen?
+    `;
+
+    const keyboard = {
+        inline_keyboard: [
+            [{
+                    text: 'Löschen',
+                    callback_data: `delete_${eventIdentifier}`
+                },
+                {
+                    text: 'Ablehnen',
+                    callback_data: `reject_delete_${eventIdentifier}`
+                }
+            ]
+        ]
+    };
+
+    bot.sendMessage(adminChatId, message, {
+        reply_markup: JSON.stringify(keyboard)
+    });
+    bot.sendMessage(chatId, 'Deine Löschungsanfrage wurde zur Überprüfung an die Administratoren gesendet. Wir werden dich benachrichtigen, sobald eine Entscheidung getroffen wurde.');
+    delete userStates[chatId];
+}
+
+async function handleAdminApproval(bot, callbackQuery) {
+    const action = callbackQuery.data;
+    const adminChatId = callbackQuery.message.chat.id;
+
+    if (action.startsWith('delete_') || action.startsWith('reject_delete_')) {
+        const eventIdentifier = action.split('_').slice(1).join('_');
+        const isApproved = action.startsWith('delete_');
+
+        if (isApproved) {
+            // Here you would implement the actual event deletion logic
+            console.log(`Event deletion approved for: ${eventIdentifier}`);
+            bot.sendMessage(adminChatId, `Event-Löschung genehmigt für: ${eventIdentifier}`);
+        } else {
+            console.log(`Event deletion rejected for: ${eventIdentifier}`);
+            bot.sendMessage(adminChatId, `Event-Löschung abgelehnt für: ${eventIdentifier}`);
+        }
+
+        bot.answerCallbackQuery(callbackQuery.id, {
+            text: isApproved ? 'Event-Löschung genehmigt' : 'Event-Löschung abgelehnt'
+        });
+        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
+    } else if (action.startsWith('approve_') || action.startsWith('reject_')) {
+        const userChatId = action.split('_')[1];
+        const isApproved = action.startsWith('approve_');
+        console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
+
+        if (isApproved) {
+            const eventDetails = extractEventDetails(callbackQuery.message.text);
+            console.log('Extracted event details:', eventDetails);
+
+            try {
+                const publishedEvent = await publishEventToNostr(eventDetails);
+                console.log('Event published to Nostr:', publishedEvent);
+
+                // Generate Flockstr link
+                const eventNaddr = nip19.naddrEncode({
+                    kind: publishedEvent.kind,
+                    pubkey: publishedEvent.pubkey,
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
+                });
+                const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
+
+                // Send approval message with Flockstr link
+                bot.sendMessage(userChatId, `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`);
+            } catch (error) {
+                console.error('Error publishing event to Nostr:', error);
+                bot.sendMessage(userChatId, 'Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator.');
+            }
+        } else {
+            bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
+        }
+
+        bot.answerCallbackQuery(callbackQuery.id, {
+            text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
+        });
+        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
     }
 }
 

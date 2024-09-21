@@ -12,6 +12,9 @@ const {
 const {
     nip19
 } = require('nostr-tools');
+const {
+    startEventSuggestion
+} = require('./eventSuggestion');
 
 async function handleStart(bot, msg) {
     const chatId = msg.chat.id;
@@ -101,14 +104,23 @@ async function handleRefreshCommands(bot, msg) {
     }
 }
 
-function handleSuggestEvent(bot, msg) {
+function handleEventSuggestion(bot, msg) {
     const chatId = msg.chat.id;
-    startEventSuggestion(bot, chatId);
+    startEventSuggestion(bot, chatId, msg);
+}
+
+function handleDeleteEventRequest(bot, msg) {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, 'Bitte gib die Event-ID oder den Link des Events ein, das du löschen möchtest:');
+    userStates[chatId] = {
+        step: 'awaiting_event_id_for_deletion'
+    };
 }
 
 module.exports = {
     handleStart,
     handleMeetups,
     handleRefreshCommands,
-    handleSuggestEvent
+    handleEventSuggestion,
+    handleDeleteEventRequest
 };
