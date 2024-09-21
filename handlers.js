@@ -17,6 +17,7 @@ const {
 } = require('nostr-tools');
 const {
     startEventSuggestion,
+    extractEventDetails,
     userStates
 } = require('./eventSuggestion');
 
@@ -111,7 +112,31 @@ async function handleAdminApproval(bot, callbackQuery) {
     }
 }
 
-async function handleMeetups(bot, msg) {
+function filterEventsByTimeFrame(allEvents, timeFrame) {
+    const now = new Date();
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - now.getDay()), 23, 59, 59);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    return allEvents.map(calendar => ({
+        ...calendar,
+        events: calendar.events.filter(event => {
+            const eventDate = new Date(event.start);
+            switch (timeFrame) {
+                case 'today':
+                    return eventDate <= endOfDay;
+                case 'week':
+                    return eventDate <= endOfWeek;
+                case 'month':
+                    return eventDate <= endOfMonth;
+                default:
+                    return true;
+            }
+        })
+    }));
+}
+
+async function handleMeetupsFilter(bot, msg, timeFrame) {
     const chatId = msg.chat.id;
     console.log('Fetching calendar events...');
     try {
@@ -121,7 +146,6 @@ async function handleMeetups(bot, msg) {
             const decoded = nip19.decode(naddr);
             const calendarId = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
             const result = await fetchCalendarEvents(calendarId, naddr);
-            console.log('Fetched calendar result:', result);
             if (result && result.calendarName) {
                 allEvents.push(result);
             } else {
@@ -134,13 +158,14 @@ async function handleMeetups(bot, msg) {
             return;
         }
 
-        if (allEvents.every(cal => cal.events.length === 0)) {
-            await bot.sendMessage(chatId, 'Keine bevorstehenden Meetups gefunden.');
+        const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
+
+        if (filteredEvents.every(cal => cal.events.length === 0)) {
+            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`);
             return;
         }
 
-        const message = formatMeetupsMessage(allEvents);
-
+        const message = formatMeetupsMessage(filteredEvents);
         if (message.length > 4096) {
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
@@ -156,9 +181,37 @@ async function handleMeetups(bot, msg) {
             });
         }
     } catch (error) {
-        console.error('Error in /meetups command:', error);
+        console.error('Error in handleMeetupsFilter:', error);
         await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
     }
+}
+
+
+async function handleMeetups(bot, msg) {
+    const chatId = msg.chat.id;
+    const keyboard = {
+        inline_keyboard: [
+            [{
+                text: 'Heute',
+                callback_data: 'meetups_today'
+            }],
+            [{
+                text: 'Diese Woche',
+                callback_data: 'meetups_week'
+            }],
+            [{
+                text: 'Diesen Monat',
+                callback_data: 'meetups_month'
+            }],
+            [{
+                text: 'Alle',
+                callback_data: 'meetups_all'
+            }]
+        ]
+    };
+    await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
+        reply_markup: JSON.stringify(keyboard)
+    });
 }
 
 async function handleRefreshCommands(bot, msg) {
@@ -298,5 +351,6 @@ module.exports = {
     handleDeletionInput,
     handleAdminApproval,
     handleDeletionConfirmation,
-    sendDeletionRequestForApproval
+    sendDeletionRequestForApproval,
+    handleMeetupsFilter
 };

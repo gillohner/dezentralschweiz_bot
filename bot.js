@@ -11,7 +11,8 @@ const {
   handleDeleteEventRequest,
   handleDeletionInput,
   handleDeletionConfirmation,
-  handleAdminApproval
+  handleAdminApproval,
+  handleMeetupsFilter
 } = require('./handlers');
 const communityLinks = require('./communityLinks');
 const {
@@ -94,7 +95,10 @@ bot.on('callback_query', async (callbackQuery) => {
   const msg = callbackQuery.message;
   const chatId = msg.chat.id;
 
-  if (action.startsWith('links_')) {
+  if (action.startsWith('meetups_')) {
+    const timeFrame = action.split('_')[1];
+    await handleMeetupsFilter(bot, msg, timeFrame);
+  } else if (action.startsWith('links_')) {
     const category = action.split('_')[1];
     const links = communityLinks[category];
     let message = `<b>${category}:</b>\n\n`;

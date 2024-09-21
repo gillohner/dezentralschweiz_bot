@@ -174,5 +174,6 @@ module.exports = {
     handleEventCreationStep,
     handleOptionalField,
     sendEventForApproval,
+    extractEventDetails,
     userStates
 };
