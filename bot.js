@@ -8,7 +8,9 @@ const {
   handleMeetups,
   handleRefreshCommands,
   handleEventSuggestion,
-  handleDeleteEventRequest
+  handleDeleteEventRequest,
+  handleDeletionInput,
+  handleDeletionConfirmation
 } = require('./handlers');
 const communityLinks = require('./communityLinks');
 const {
@@ -79,7 +81,11 @@ bot.onText(/\/meetup_loeschen/, (msg) => {
 
 bot.on('message', (msg) => {
   if (msg.chat.type === 'private') {
-    handleEventCreationStep(bot, msg);
+    if (userStates[msg.chat.id]?.step === 'awaiting_event_id_for_deletion') {
+      handleDeletionInput(bot, msg);
+    } else {
+      handleEventCreationStep(bot, msg);
+    }
   }
 });
 
@@ -115,6 +121,10 @@ bot.on('callback_query', async (callbackQuery) => {
     } else {
       bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.");
     }
+  }
+
+  if (callbackQuery.data === 'confirm_delete' || callbackQuery.data === 'cancel_delete') {
+    handleDeletionConfirmation(bot, callbackQuery);
   }
 });
 

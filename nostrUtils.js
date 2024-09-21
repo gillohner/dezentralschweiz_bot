@@ -26,8 +26,28 @@ function getEventHash(event) {
 }
 
 async function fetchEventDirectly(filter) {
+    // Check if the filter contains an NADDR and decode it
+    if (filter.ids && filter.ids[0].startsWith('naddr1')) {
+        try {
+            const decoded = nip19.decode(filter.ids[0]);
+            if (decoded.type === 'naddr') {
+                filter = {
+                    kinds: [decoded.data.kind],
+                    authors: [decoded.data.pubkey],
+                    "#d": [decoded.data.identifier]
+                };
+            }
+        } catch (error) {
+            console.error('Error decoding NADDR:', error);
+            return null;
+        }
+    }
+
+    console.log('Using decoded filter:', filter);
+
     for (const relay of config.DEFAULT_RELAYS) {
         try {
+            console.log(`Trying relay: ${relay}`);
             const event = await new Promise((resolve, reject) => {
                 const ws = new WebSocket(relay);
                 const timeout = setTimeout(() => {
@@ -36,12 +56,15 @@ async function fetchEventDirectly(filter) {
                 }, 10000);
 
                 ws.on('open', () => {
+                    console.log(`Connected to relay: ${relay}`);
                     const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
                     ws.send(subscriptionMessage);
+                    console.log(`Sent subscription message: ${subscriptionMessage}`);
                 });
 
                 ws.on('message', (data) => {
                     const message = JSON.parse(data);
+                    console.log(`Received message from ${relay}:`, message);
                     if (message[0] === 'EVENT' && message[1] === 'my-sub') {
                         clearTimeout(timeout);
                         ws.close();
@@ -54,23 +77,27 @@ async function fetchEventDirectly(filter) {
                 });
 
                 ws.on('error', (error) => {
+                    console.error(`WebSocket error for ${relay}:`, error);
                     clearTimeout(timeout);
                     reject(error);
                 });
             });
 
-            if (event) return event;
+            if (event) {
+                console.log(`Event found on relay ${relay}:`, event);
+                return event;
+            }
         } catch (error) {
             console.error(`Error fetching event from relay ${relay}:`, error);
         }
     }
+    console.log('No event found on any relay');
     return null;
 }
 
 async function fetchCalendarEvents(calendarId, naddr) {
     console.log(`Fetching events for calendar: ${calendarId}`);
     const [kind, pubkey, identifier] = calendarId.split(':');
-
     const calendarFilter = {
         kinds: [parseInt(kind)],
         authors: [pubkey],
@@ -80,7 +107,6 @@ async function fetchCalendarEvents(calendarId, naddr) {
     try {
         console.log('Fetching calendar event with filter:', calendarFilter);
         const calendarEvent = await fetchEventDirectly(calendarFilter);
-
         if (!calendarEvent) {
             console.error(`Calendar event not found for ${calendarId}`);
             return {
@@ -91,7 +117,6 @@ async function fetchCalendarEvents(calendarId, naddr) {
         }
 
         console.log('Calendar event found:', calendarEvent);
-
         const eventReferences = calendarEvent.tags
             .filter(tag => tag[0] === 'a')
             .map(tag => {
@@ -105,7 +130,6 @@ async function fetchCalendarEvents(calendarId, naddr) {
             });
 
         console.log('Event references:', eventReferences);
-
         if (eventReferences.length === 0) {
             return {
                 calendarName: calendarEvent.tags.find(t => t[0] === 'name')?. [1] || 'Unbenannter Kalender',
@@ -114,14 +138,7 @@ async function fetchCalendarEvents(calendarId, naddr) {
             };
         }
 
-        const eventsFilter = {
-            kinds: [31923],
-            authors: [pubkey],
-            "#d": eventReferences.map(ref => ref.identifier),
-        };
-
-        console.log('Fetching events with filter:', eventsFilter);
-        const events = await fetchEventsDirectly(eventsFilter);
+        const events = await fetchEvents(eventReferences);
         console.log(`Fetched ${events.length} events for calendar ${calendarId}`);
         return {
             calendarName: calendarEvent.tags.find(t => t[0] === 'name')?. [1] || 'Unbenannter Kalender',
@@ -138,41 +155,17 @@ async function fetchCalendarEvents(calendarId, naddr) {
     }
 }
 
-async function fetchEventsDirectly(filter) {
+async function fetchEvents(eventReferences) {
+    console.log('Fetching events for references:', eventReferences);
     const events = [];
-    for (const relay of config.DEFAULT_RELAYS) {
-        try {
-            const ws = new WebSocket(relay);
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                    ws.close();
-                    resolve();
-                }, 10000);
-
-                ws.on('open', () => {
-                    const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
-                    ws.send(subscriptionMessage);
-                });
-
-                ws.on('message', (data) => {
-                    const message = JSON.parse(data);
-                    if (message[0] === 'EVENT' && message[1] === 'my-sub') {
-                        events.push(message[2]);
-                    } else if (message[0] === 'EOSE') {
-                        clearTimeout(timeout);
-                        ws.close();
-                        resolve();
-                    }
-                });
-
-                ws.on('error', (error) => {
-                    clearTimeout(timeout);
-                    reject(error);
-                });
-            });
-        } catch (error) {
-            console.error(`Error fetching events from relay ${relay}:`, error);
-        }
+    for (const ref of eventReferences) {
+        const filter = {
+            kinds: [ref.kind],
+            authors: [ref.pubkey],
+            "#d": [ref.identifier],
+        };
+        const event = await fetchEventDirectly(filter);
+        if (event) events.push(event);
     }
     return events;
 }
@@ -202,37 +195,42 @@ async function publishEventToNostr(eventDetails) {
     }
 
     const calendarPubkey = calendarEvent.pubkey;
-    const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
     const eventId = crypto.randomBytes(16).toString('hex');
 
     let eventTemplate = {
-        kind: 31923,
+        kind: eventDetails.kind || 31923,
         created_at: Math.floor(Date.now() / 1000),
-        pubkey: getPublicKey(privateKey), // Use the bot's pubkey for the event
-        tags: [
+        pubkey: getPublicKey(privateKey),
+        tags: [],
+        content: eventDetails.content || '',
+    };
+
+    if (eventDetails.kind !== 5) {  // For non-deletion events
+        const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
+        eventTemplate.tags = [
             ['d', eventId],
             ['name', eventDetails.title],
             ['start', startTimestamp.toString()],
             ['start_tzid', "Europe/Zurich"],
             ['location', eventDetails.location],
             ['description', eventDetails.description],
-            ['p', calendarPubkey, '', 'host'], // Use the calendar's pubkey as the host
+            ['p', calendarPubkey, '', 'host'],
             ['a', calendarNaddr],
-        ],
-        content: eventDetails.description, // NIP-52 suggests using content for backwards compatibility
-    };
+        ];
+        eventTemplate.content = eventDetails.description;
 
-    // Add optional fields if they exist
-    if (eventDetails.end_date && eventDetails.end_time) {
-        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
-        eventTemplate.tags.push(['end', endTimestamp.toString()]);
+        if (eventDetails.end_date && eventDetails.end_time) {
+            const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
+            eventTemplate.tags.push(['end', endTimestamp.toString()]);
+        }
+
+        if (eventDetails.image) {
+            eventTemplate.tags.push(['image', eventDetails.image]);
+        }
+    } else {  // For deletion events
+        eventTemplate.tags = eventDetails.tags || [];
     }
 
-    if (eventDetails.image) {
-        eventTemplate.tags.push(['image', eventDetails.image]);
-    }
-
-    // This assigns the pubkey, calculates the event id and signs the event in a single step
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
     console.log('Created Nostr event:', signedEvent);
 
@@ -246,8 +244,10 @@ async function publishEventToNostr(eventDetails) {
         }
     }
 
-    // Update the calendar event
-    await updateCalendarEvent(signedEvent, privateKey);
+    // Update the calendar event only for non-deletion events
+    if (eventDetails.kind !== 5) {
+        await updateCalendarEvent(signedEvent, privateKey);
+    }
 
     return signedEvent;
 }
@@ -314,5 +314,6 @@ async function updateCalendarEvent(newEvent, privateKey) {
 
 module.exports = {
     fetchCalendarEvents,
-    publishEventToNostr
+    publishEventToNostr,
+    fetchEventDirectly
 };
