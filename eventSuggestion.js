@@ -97,65 +97,6 @@ function handleDeletionRequest(bot, chatId, eventIdentifier) {
     delete userStates[chatId];
 }
 
-async function handleAdminApproval(bot, callbackQuery) {
-    const action = callbackQuery.data;
-    const adminChatId = callbackQuery.message.chat.id;
-
-    if (action.startsWith('delete_') || action.startsWith('reject_delete_')) {
-        const eventIdentifier = action.split('_').slice(1).join('_');
-        const isApproved = action.startsWith('delete_');
-
-        if (isApproved) {
-            // Here you would implement the actual event deletion logic
-            console.log(`Event deletion approved for: ${eventIdentifier}`);
-            bot.sendMessage(adminChatId, `Event-Löschung genehmigt für: ${eventIdentifier}`);
-        } else {
-            console.log(`Event deletion rejected for: ${eventIdentifier}`);
-            bot.sendMessage(adminChatId, `Event-Löschung abgelehnt für: ${eventIdentifier}`);
-        }
-
-        bot.answerCallbackQuery(callbackQuery.id, {
-            text: isApproved ? 'Event-Löschung genehmigt' : 'Event-Löschung abgelehnt'
-        });
-        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
-    } else if (action.startsWith('approve_') || action.startsWith('reject_')) {
-        const userChatId = action.split('_')[1];
-        const isApproved = action.startsWith('approve_');
-        console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
-
-        if (isApproved) {
-            const eventDetails = extractEventDetails(callbackQuery.message.text);
-            console.log('Extracted event details:', eventDetails);
-
-            try {
-                const publishedEvent = await publishEventToNostr(eventDetails);
-                console.log('Event published to Nostr:', publishedEvent);
-
-                // Generate Flockstr link
-                const eventNaddr = nip19.naddrEncode({
-                    kind: publishedEvent.kind,
-                    pubkey: publishedEvent.pubkey,
-                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
-                });
-                const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
-
-                // Send approval message with Flockstr link
-                bot.sendMessage(userChatId, `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`);
-            } catch (error) {
-                console.error('Error publishing event to Nostr:', error);
-                bot.sendMessage(userChatId, 'Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator.');
-            }
-        } else {
-            bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
-        }
-
-        bot.answerCallbackQuery(callbackQuery.id, {
-            text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
-        });
-        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
-    }
-}
-
 function showOptionalFieldsMenu(bot, chatId) {
     const keyboard = {
         inline_keyboard: [
@@ -243,52 +184,6 @@ Beschreibung: ${eventDetails.description}
     bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde zur Genehmigung eingereicht. Wir werden dich benachrichtigen, sobald er überprüft wurde.');
 }
 
-async function handleAdminApproval(bot, callbackQuery) {
-    const action = callbackQuery.data;
-    const adminChatId = callbackQuery.message.chat.id;
-    const {
-        nip19
-    } = require('nostr-tools');
-
-    if (action.startsWith('approve_') || action.startsWith('reject_')) {
-        const userChatId = action.split('_')[1];
-        const isApproved = action.startsWith('approve_');
-        console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
-
-        if (isApproved) {
-            const eventDetails = extractEventDetails(callbackQuery.message.text);
-            console.log('Extracted event details:', eventDetails);
-
-            try {
-                const publishedEvent = await publishEventToNostr(eventDetails);
-                console.log('Event published to Nostr:', publishedEvent);
-
-                // Generate Flockstr link
-                const eventNaddr = nip19.naddrEncode({
-                    kind: publishedEvent.kind,
-                    pubkey: publishedEvent.pubkey,
-                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
-                });
-                const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
-
-                // Send approval message with Flockstr link
-                bot.sendMessage(userChatId, `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`);
-            } catch (error) {
-                console.error('Error publishing event to Nostr:', error);
-                bot.sendMessage(userChatId, 'Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator.');
-            }
-        } else {
-            bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
-        }
-
-        bot.answerCallbackQuery(callbackQuery.id, {
-            text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
-        });
-        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
-    }
-}
-
-
 function extractEventDetails(messageText) {
     const lines = messageText.split('\n');
     const details = {
@@ -312,7 +207,6 @@ function extractEventDetails(messageText) {
 module.exports = {
     startEventSuggestion,
     handleEventCreationStep,
-    handleAdminApproval,
     handleOptionalField,
     sendEventForApproval,
     userStates

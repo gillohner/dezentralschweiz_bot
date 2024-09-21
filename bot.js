@@ -10,13 +10,13 @@ const {
   handleEventSuggestion,
   handleDeleteEventRequest,
   handleDeletionInput,
-  handleDeletionConfirmation
+  handleDeletionConfirmation,
+  handleAdminApproval
 } = require('./handlers');
 const communityLinks = require('./communityLinks');
 const {
   startEventSuggestion,
   handleEventCreationStep,
-  handleAdminApproval,
   handleOptionalField,
   sendEventForApproval,
   userStates

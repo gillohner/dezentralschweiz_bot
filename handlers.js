@@ -47,6 +47,79 @@ Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir g
     });
 }
 
+async function handleAdminApproval(bot, callbackQuery) {
+    const action = callbackQuery.data;
+    const adminChatId = callbackQuery.message.chat.id;
+
+    if (action.startsWith('approve_delete_') || action.startsWith('reject_delete_')) {
+        const userChatId = action.split('_')[2];
+        const isApproved = action.startsWith('approve_delete_');
+        console.log(`Event deletion ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
+
+        if (!userStates[userChatId]) {
+            console.error(`User state not found for user ${userChatId}`);
+            bot.sendMessage(adminChatId, 'Error: User state not found. The deletion request may have expired.');
+            return;
+        }
+
+        if (isApproved && userStates[userChatId].eventToDelete) {
+            const eventToDelete = userStates[userChatId].eventToDelete;
+            try {
+                await handleDeletionConfirmation(bot, callbackQuery, eventToDelete);
+                bot.sendMessage(userChatId, 'Ihre Anfrage zur Löschung des Events wurde genehmigt. Das Event wurde gelöscht.');
+            } catch (error) {
+                console.error('Error deleting event:', error);
+                bot.sendMessage(userChatId, 'Es gab einen Fehler beim Löschen des Events. Bitte kontaktieren Sie den Administrator.');
+            }
+        } else if (!isApproved) {
+            bot.sendMessage(userChatId, 'Ihre Anfrage zur Löschung des Events wurde abgelehnt.');
+        }
+
+        bot.answerCallbackQuery(callbackQuery.id, {
+            text: isApproved ? 'Löschung genehmigt' : 'Löschung abgelehnt'
+        });
+        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
+
+        // Clean up the user state after processing
+        delete userStates[userChatId];
+    } else if (action.startsWith('approve_') || action.startsWith('reject_')) {
+        const userChatId = action.split('_')[1];
+        const isApproved = action.startsWith('approve_');
+        console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
+
+        if (isApproved) {
+            const eventDetails = extractEventDetails(callbackQuery.message.text);
+            console.log('Extracted event details:', eventDetails);
+
+            try {
+                const publishedEvent = await publishEventToNostr(eventDetails);
+                console.log('Event published to Nostr:', publishedEvent);
+
+                // Generate Flockstr link
+                const eventNaddr = nip19.naddrEncode({
+                    kind: publishedEvent.kind,
+                    pubkey: publishedEvent.pubkey,
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?.[1] || '',
+                });
+                const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
+
+                // Send approval message with Flockstr link
+                bot.sendMessage(userChatId, `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`);
+            } catch (error) {
+                console.error('Error publishing event to Nostr:', error);
+                bot.sendMessage(userChatId, 'Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator.');
+            }
+        } else {
+            bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
+        }
+
+        bot.answerCallbackQuery(callbackQuery.id, {
+            text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
+        });
+        bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
+    }
+}
+
 async function handleMeetups(bot, msg) {
     const chatId = msg.chat.id;
     console.log('Fetching calendar events...');
@@ -121,11 +194,35 @@ function handleDeleteEventRequest(bot, msg) {
     bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein:");
 }
 
+function sendDeletionRequestForApproval(bot, userChatId, eventToDelete) {
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+    let message = `
+Löschungsanfrage für Event:
+Titel: ${eventToDelete.tags.find(t => t[0] === 'name')?.[1] || 'Ohne Titel'}
+Datum: ${new Date(parseInt(eventToDelete.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000).toLocaleString()}
+Ort: ${eventToDelete.tags.find(t => t[0] === 'location')?.[1] || 'Kein Ort angegeben'}
+
+Möchten Sie dieses Event löschen?
+`;
+
+    const keyboard = {
+        inline_keyboard: [
+            [
+                { text: 'Genehmigen', callback_data: `approve_delete_${userChatId}` },
+                { text: 'Ablehnen', callback_data: `reject_delete_${userChatId}` }
+            ]
+        ]
+    };
+
+    bot.sendMessage(adminChatId, message, { reply_markup: JSON.stringify(keyboard) });
+    bot.sendMessage(userChatId, 'Ihre Löschungsanfrage wurde zur Genehmigung an die Administratoren gesendet. Wir werden Sie benachrichtigen, sobald eine Entscheidung getroffen wurde.');
+}
+
 async function handleDeletionInput(bot, msg) {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    if (userStates[chatId].step === 'awaiting_event_id_for_deletion') {
+    if (userStates[chatId] && userStates[chatId].step === 'awaiting_event_id_for_deletion') {
         let eventId, pubkey, kind;
         try {
             if (text.startsWith('nostr:')) {
@@ -159,73 +256,44 @@ async function handleDeletionInput(bot, msg) {
             return;
         }
 
-        userStates[chatId].eventToDelete = event;
-        const message = `
-Event gefunden:
-Titel: ${event.tags.find(t => t[0] === 'name')?.[1] || 'Ohne Titel'}
-Datum: ${new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000).toLocaleString()}
-Ort: ${event.tags.find(t => t[0] === 'location')?.[1] || 'Kein Ort angegeben'}
-
-Sind Sie sicher, dass Sie dieses Event löschen möchten?
-`;
-
-        const keyboard = {
-            inline_keyboard: [
-                [{
-                    text: 'Ja, löschen',
-                    callback_data: 'confirm_delete'
-                }],
-                [{
-                    text: 'Nein, abbrechen',
-                    callback_data: 'cancel_delete'
-                }]
-            ]
-        };
-
-        bot.sendMessage(chatId, message, {
-            reply_markup: keyboard
-        });
-        userStates[chatId].step = 'awaiting_deletion_confirmation';
+        if (event) {
+            userStates[chatId].eventToDelete = event;
+            userStates[chatId].step = 'awaiting_admin_approval';
+            await sendDeletionRequestForApproval(bot, chatId, event);
+        } else {
+            bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut.");
+            delete userStates[chatId];
+        }
     }
 }
 
-async function handleDeletionConfirmation(bot, query) {
-    const chatId = query.message.chat.id;
-
-    if (query.data === 'confirm_delete') {
-        const eventToDelete = userStates[chatId].eventToDelete;
-        const privateKey = process.env.BOT_NSEC;
-        if (!privateKey) {
-            throw new Error('BOT_NSEC is not set in the environment variables');
-        }
-        const publicKey = getPublicKey(privateKey);
-
-        const deleteEvent = {
-            kind: 5,
-            pubkey: publicKey,
-            created_at: Math.floor(Date.now() / 1000),
-            tags: [
-                ['e', eventToDelete.id],
-                ['a', `31923:${eventToDelete.pubkey}:${eventToDelete.tags.find(t => t[0] === 'd')?.[1]}`]
-            ],
-            content: 'Event von Admin gelöscht'
-        };
-
-        try {
-            await publishEventToNostr(deleteEvent);
-            bot.answerCallbackQuery(query.id, { text: 'Event erfolgreich gelöscht' });
-            bot.sendMessage(chatId, 'Das Event wurde gelöscht.');
-        } catch (error) {
-            console.error('Fehler beim Veröffentlichen des Lösch-Events:', error);
-            bot.answerCallbackQuery(query.id, { text: 'Fehler beim Löschen des Events' });
-            bot.sendMessage(chatId, 'Es gab einen Fehler beim Löschen des Events. Bitte versuchen Sie es später erneut.');
-        }
-    } else if (query.data === 'cancel_delete') {
-        bot.answerCallbackQuery(query.id, { text: 'Löschvorgang abgebrochen' });
-        bot.sendMessage(chatId, 'Löschvorgang des Events abgebrochen.');
+async function handleDeletionConfirmation(bot, query, eventToDelete) {
+    const privateKey = process.env.BOT_NSEC;
+    if (!privateKey) {
+        throw new Error('BOT_NSEC is not set in the environment variables');
     }
+    const publicKey = getPublicKey(privateKey);
 
-    delete userStates[chatId];
+    const deleteEvent = {
+        kind: 5,
+        pubkey: publicKey,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [
+            ['e', eventToDelete.id],
+            ['a', `31923:${eventToDelete.pubkey}:${eventToDelete.tags.find(t => t[0] === 'd')?.[1]}`]
+        ],
+        content: 'Event von Admin gelöscht'
+    };
+
+    try {
+        await publishEventToNostr(deleteEvent);
+        bot.answerCallbackQuery(query.id, {
+            text: 'Event erfolgreich gelöscht'
+        });
+    } catch (error) {
+        console.error('Fehler beim Veröffentlichen des Lösch-Events:', error);
+        throw error;
+    }
 }
 
 module.exports = {
@@ -235,5 +303,7 @@ module.exports = {
     handleEventSuggestion,
     handleDeleteEventRequest,
     handleDeletionInput,
-    handleDeletionConfirmation
+    handleAdminApproval,
+    handleDeletionConfirmation,
+    sendDeletionRequestForApproval
 };
