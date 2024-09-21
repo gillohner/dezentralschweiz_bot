@@ -27,7 +27,6 @@ To set up the Dezentralschweiz Bot, follow these steps:
    ```bash
    git clone https://github.com/gillohner/dezentralschweiz_bot.git
    cd dezentralschweiz-bot
-
 2. **Install Dependencies**
    ```bash
    npm install
