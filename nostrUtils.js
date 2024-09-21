@@ -1,20 +1,18 @@
-const WebSocket = require('ws');
-const crypto = require('crypto');
-const config = require('./config');
-const {
+import WebSocket from 'ws';
+import crypto from 'crypto';
+import {
     getPublicKey,
     finalizeEvent
-} = require('nostr-tools/pure');
-const {
+} from 'nostr-tools/pure';
+import {
     nip19
-} = require('nostr-tools');
+} from 'nostr-tools';
+import config from './config.js';
 
-function sha256(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
-}
+const sha256 = (data) => crypto.createHash('sha256').update(data).digest('hex');
 
-function getEventHash(event) {
-    let serialized = JSON.stringify([
+const getEventHash = (event) => {
+    const serialized = JSON.stringify([
         0,
         event.pubkey,
         event.created_at,
@@ -23,10 +21,9 @@ function getEventHash(event) {
         event.content
     ]);
     return sha256(serialized);
-}
+};
 
-async function fetchEventDirectly(filter) {
-    // Check if the filter contains an NADDR and decode it
+const fetchEventDirectly = async (filter) => {
     if (filter.ids && filter.ids[0].startsWith('naddr1')) {
         try {
             const decoded = nip19.decode(filter.ids[0]);
@@ -91,11 +88,12 @@ async function fetchEventDirectly(filter) {
             console.error(`Error fetching event from relay ${relay}:`, error);
         }
     }
+
     console.log('No event found on any relay');
     return null;
-}
+};
 
-async function fetchCalendarEvents(calendarId, naddr) {
+const fetchCalendarEvents = async (calendarId, naddr) => {
     console.log(`Fetching events for calendar: ${calendarId}`);
     const [kind, pubkey, identifier] = calendarId.split(':');
     const calendarFilter = {
@@ -153,9 +151,9 @@ async function fetchCalendarEvents(calendarId, naddr) {
             naddr
         };
     }
-}
+};
 
-async function fetchEvents(eventReferences) {
+const fetchEvents = async (eventReferences) => {
     console.log('Fetching events for references:', eventReferences);
     const events = [];
     for (const ref of eventReferences) {
@@ -168,9 +166,9 @@ async function fetchEvents(eventReferences) {
         if (event) events.push(event);
     }
     return events;
-}
+};
 
-async function publishEventToNostr(eventDetails) {
+const publishEventToNostr = async (eventDetails) => {
     console.log('Publishing event to Nostr:', eventDetails);
     const privateKey = process.env.BOT_NSEC;
     if (!privateKey) {
@@ -182,7 +180,6 @@ async function publishEventToNostr(eventDetails) {
         throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
     }
 
-    // Fetch the calendar event to get its pubkey
     const decoded = nip19.decode(calendarNaddr);
     const calendarFilter = {
         kinds: [31924],
@@ -196,7 +193,6 @@ async function publishEventToNostr(eventDetails) {
 
     const calendarPubkey = calendarEvent.pubkey;
     const eventId = crypto.randomBytes(16).toString('hex');
-
     let eventTemplate = {
         kind: eventDetails.kind || 31923,
         created_at: Math.floor(Date.now() / 1000),
@@ -205,7 +201,7 @@ async function publishEventToNostr(eventDetails) {
         content: eventDetails.content || '',
     };
 
-    if (eventDetails.kind !== 5) {  // For non-deletion events
+    if (eventDetails.kind !== 5) {
         const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
         eventTemplate.tags = [
             ['d', eventId],
@@ -227,14 +223,13 @@ async function publishEventToNostr(eventDetails) {
         if (eventDetails.image) {
             eventTemplate.tags.push(['image', eventDetails.image]);
         }
-    } else {  // For deletion events
+    } else {
         eventTemplate.tags = eventDetails.tags || [];
     }
 
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
     console.log('Created Nostr event:', signedEvent);
 
-    // Publish to relays
     for (const relay of config.DEFAULT_RELAYS) {
         try {
             console.log(`Publishing event to relay: ${relay}`);
@@ -244,15 +239,14 @@ async function publishEventToNostr(eventDetails) {
         }
     }
 
-    // Update the calendar event only for non-deletion events
     if (eventDetails.kind !== 5) {
         await updateCalendarEvent(signedEvent, privateKey);
     }
 
     return signedEvent;
-}
+};
 
-async function publishToRelay(relay, event) {
+const publishToRelay = (relay, event) => {
     return new Promise((resolve, reject) => {
         const ws = new WebSocket(relay);
         ws.on('open', () => {
@@ -266,9 +260,9 @@ async function publishToRelay(relay, event) {
             reject(error);
         });
     });
-}
+};
 
-async function updateCalendarEvent(newEvent, privateKey) {
+const updateCalendarEvent = async (newEvent, privateKey) => {
     const calendarId = process.env.EVENT_CALENDAR_NADDR;
     if (!calendarId) {
         console.error('EVENT_CALENDAR_NADDR is not set in environment variables');
@@ -298,7 +292,6 @@ async function updateCalendarEvent(newEvent, privateKey) {
         const updatedCalendarEvent = finalizeEvent(calendarEvent, privateKey);
         console.log('Updated calendar event:', updatedCalendarEvent);
 
-        // Publish updated calendar event
         for (const relay of config.DEFAULT_RELAYS) {
             try {
                 console.log(`Publishing updated calendar event to relay: ${relay}`);
@@ -310,9 +303,9 @@ async function updateCalendarEvent(newEvent, privateKey) {
     } else {
         console.error('Calendar event not found');
     }
-}
+};
 
-module.exports = {
+export {
     fetchCalendarEvents,
     publishEventToNostr,
     fetchEventDirectly

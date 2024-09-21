@@ -24,16 +24,16 @@ const commands = [{
     }
 ];
 
-
-async function setupCommands(bot) {
+const setupCommands = async (bot) => {
     try {
         await bot.setMyCommands(commands);
         console.log('Commands set up successfully');
     } catch (error) {
         console.error('Error setting up commands:', error);
     }
-}
+};
 
-module.exports = {
-    setupCommands
+export {
+    setupCommands,
+    commands
 };

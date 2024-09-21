@@ -72,4 +72,4 @@ const communityLinks = {
   ]
 };
 
-module.exports = communityLinks;
+export default communityLinks;

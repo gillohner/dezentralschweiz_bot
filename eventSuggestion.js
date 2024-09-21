@@ -1,9 +1,10 @@
-const userStates = {};
-const {
+import {
     publishEventToNostr
-} = require('./nostrUtils');
+} from './nostrUtils.js';
 
-function startEventSuggestion(bot, chatId, msg) {
+const userStates = {};
+
+const startEventSuggestion = (bot, chatId, msg) => {
     userStates[chatId] = {
         step: 'title',
         username: msg.from.username || '',
@@ -11,9 +12,9 @@ function startEventSuggestion(bot, chatId, msg) {
         lastName: msg.from.last_name || ''
     };
     bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:');
-}
+};
 
-function handleEventCreationStep(bot, msg) {
+const handleEventCreationStep = (bot, msg) => {
     const chatId = msg.chat.id;
     if (!userStates[chatId]) return;
 
@@ -60,9 +61,9 @@ function handleEventCreationStep(bot, msg) {
             showOptionalFieldsMenu(bot, chatId);
             break;
     }
-}
+};
 
-function showOptionalFieldsMenu(bot, chatId) {
+const showOptionalFieldsMenu = (bot, chatId) => {
     const keyboard = {
         inline_keyboard: [
             [{
@@ -86,9 +87,9 @@ function showOptionalFieldsMenu(bot, chatId) {
     bot.sendMessage(chatId, 'Möchtest du optionale Felder hinzufügen oder das Event zur Genehmigung senden?', {
         reply_markup: JSON.stringify(keyboard)
     });
-}
+};
 
-function handleOptionalField(bot, chatId, field) {
+const handleOptionalField = (bot, chatId, field) => {
     if (!userStates[chatId]) {
         userStates[chatId] = {}; // Initialize the state if it doesn't exist
     }
@@ -104,9 +105,9 @@ function handleOptionalField(bot, chatId, field) {
             bot.sendMessage(chatId, 'Bitte gib einen kurzen "Über"-Text für das Event ein:');
             break;
     }
-}
+};
 
-function sendEventForApproval(bot, userChatId, eventDetails) {
+const sendEventForApproval = (bot, userChatId, eventDetails) => {
     const adminChatId = process.env.ADMIN_CHAT_ID;
     const userInfo = userStates[userChatId];
     let userIdentifier = userInfo.username ? `@${userInfo.username}` : `${userInfo.firstName} ${userInfo.lastName}`.trim();
@@ -147,9 +148,9 @@ Beschreibung: ${eventDetails.description}
         reply_markup: JSON.stringify(keyboard)
     });
     bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde zur Genehmigung eingereicht. Wir werden dich benachrichtigen, sobald er überprüft wurde.');
-}
+};
 
-function extractEventDetails(messageText) {
+const extractEventDetails = (messageText) => {
     const lines = messageText.split('\n');
     const details = {
         creator: lines[0].split('von ')[1].split(' (')[0],
@@ -167,9 +168,9 @@ function extractEventDetails(messageText) {
     });
 
     return details;
-}
+};
 
-module.exports = {
+export {
     startEventSuggestion,
     handleEventCreationStep,
     handleOptionalField,
