@@ -1,12 +1,21 @@
-const { fetchCalendarEvents } = require('./nostrUtils');
-const { escapeHTML, formatMeetupsMessage } = require('./utils');
+const {
+    fetchCalendarEvents
+} = require('./nostrUtils');
+const {
+    escapeHTML,
+    formatMeetupsMessage
+} = require('./utils');
 const config = require('./config');
-const { setupCommands } = require('./commands');
-const { nip19 } = require('nostr-tools');
+const {
+    setupCommands
+} = require('./commands');
+const {
+    nip19
+} = require('nostr-tools');
 
 async function handleStart(bot, msg) {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Willkommen beim Dezentralschweiz Bot! Verwende /meetups, um bevorstehende Meetups zu sehen.');
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, 'Willkommen beim Dezentralschweiz Bot! Verwende /meetups, um bevorstehende Meetups zu sehen.');
 }
 
 async function handleMeetups(bot, msg) {
@@ -26,7 +35,7 @@ async function handleMeetups(bot, msg) {
                 console.error(`Failed to fetch calendar events for ${calendarId}`);
             }
         }
-        
+
         if (allEvents.length === 0) {
             await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.');
             return;
@@ -38,15 +47,21 @@ async function handleMeetups(bot, msg) {
         }
 
         const message = formatMeetupsMessage(allEvents);
-        
+
         if (message.length > 4096) {
             // If the message is too long, split it into multiple messages
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
-                await bot.sendMessage(chatId, chunk, { parse_mode: 'HTML', disable_web_page_preview: true });
+                await bot.sendMessage(chatId, chunk, {
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                });
             }
         } else {
-            await bot.sendMessage(chatId, message, { parse_mode: 'HTML', disable_web_page_preview: true });
+            await bot.sendMessage(chatId, message, {
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            });
         }
     } catch (error) {
         console.error('Error in /meetups command:', error);
@@ -55,14 +70,18 @@ async function handleMeetups(bot, msg) {
 }
 
 async function handleRefreshCommands(bot, msg) {
-  const chatId = msg.chat.id;
-  try {
-    await setupCommands(bot);
-    bot.sendMessage(chatId, 'Commands refreshed successfully!');
-  } catch (error) {
-    console.error('Error refreshing commands:', error);
-    bot.sendMessage(chatId, 'An error occurred while refreshing commands. Please try again later.');
-  }
+    const chatId = msg.chat.id;
+    try {
+        await setupCommands(bot);
+        bot.sendMessage(chatId, 'Commands refreshed successfully!');
+    } catch (error) {
+        console.error('Error refreshing commands:', error);
+        bot.sendMessage(chatId, 'An error occurred while refreshing commands. Please try again later.');
+    }
 }
 
-module.exports = { handleStart, handleMeetups, handleRefreshCommands };
+module.exports = {
+    handleStart,
+    handleMeetups,
+    handleRefreshCommands
+};
