@@ -183,6 +183,9 @@ function showOptionalFieldsMenu(bot, chatId) {
 }
 
 function handleOptionalField(bot, chatId, field) {
+    if (!userStates[chatId]) {
+        userStates[chatId] = {}; // Initialize the state if it doesn't exist
+    }
     userStates[chatId].step = field;
     switch (field) {
         case 'end_date':

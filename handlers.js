@@ -13,7 +13,8 @@ const {
     nip19
 } = require('nostr-tools');
 const {
-    startEventSuggestion
+    startEventSuggestion,
+    userStates
 } = require('./eventSuggestion');
 
 async function handleStart(bot, msg) {
@@ -102,7 +103,7 @@ async function handleRefreshCommands(bot, msg) {
         console.error('Error refreshing commands:', error);
         bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
     }
-}
+}§
 
 function handleEventSuggestion(bot, msg) {
     const chatId = msg.chat.id;
@@ -111,10 +112,10 @@ function handleEventSuggestion(bot, msg) {
 
 function handleDeleteEventRequest(bot, msg) {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Bitte gib die Event-ID oder den Link des Events ein, das du löschen möchtest:');
     userStates[chatId] = {
         step: 'awaiting_event_id_for_deletion'
     };
+    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein:");
 }
 
 module.exports = {
