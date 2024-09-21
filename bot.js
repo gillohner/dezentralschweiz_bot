@@ -23,8 +23,11 @@ const bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, {
 });
 
 bot.onText(/\/start/, (msg) => handleStart(bot, msg));
+
 bot.onText(/\/meetups/, (msg) => handleMeetups(bot, msg));
+
 bot.onText(/\/refresh_commands/, (msg) => handleRefreshCommands(bot, msg));
+
 bot.onText(/\/links/, (msg) => {
   const chatId = msg.chat.id;
   const keyboard = {
@@ -37,9 +40,10 @@ bot.onText(/\/links/, (msg) => {
     reply_markup: JSON.stringify(keyboard)
   });
 });
+
 bot.onText(/\/meetup_vorschlagen/, (msg) => {
   const chatId = msg.chat.id;
-  startEventSuggestion(bot, chatId);
+  startEventSuggestion(bot, chatId, msg);
 });
 
 bot.on('message', (msg) => {
@@ -81,6 +85,10 @@ bot.on('callback_query', async (callbackQuery) => {
       bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.");
     }
   }
+});
+
+bot.on("polling_error", (error) => {
+  console.log("Polling error:", error);
 });
 
 async function main() {

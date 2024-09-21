@@ -3,9 +3,12 @@ const {
     publishEventToNostr
 } = require('./nostrUtils');
 
-function startEventSuggestion(bot, chatId) {
+function startEventSuggestion(bot, chatId, msg) {
     userStates[chatId] = {
-        step: 'title'
+        step: 'title',
+        username: msg.from.username || '',
+        firstName: msg.from.first_name || '',
+        lastName: msg.from.last_name || ''
     };
     bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:');
 }
@@ -102,8 +105,14 @@ function handleOptionalField(bot, chatId, field) {
 
 function sendEventForApproval(bot, userChatId, eventDetails) {
     const adminChatId = process.env.ADMIN_CHAT_ID;
+    const userInfo = userStates[userChatId];
+    let userIdentifier = userInfo.username ? `@${userInfo.username}` : `${userInfo.firstName} ${userInfo.lastName}`.trim();
+    if (!userIdentifier) {
+        userIdentifier = 'Unbekannter Benutzer';
+    }
+
     let message = `
-Neuer Event-Vorschlag:
+Neuer Event-Vorschlag von ${userIdentifier}:
 Titel: ${eventDetails.title}
 Datum: ${eventDetails.date}
 Zeit: ${eventDetails.time}
@@ -186,6 +195,7 @@ async function handleAdminApproval(bot, callbackQuery) {
 function extractEventDetails(messageText) {
     const lines = messageText.split('\n');
     const details = {
+        creator: lines[0].split('von ')[1].split(' (')[0],
         title: lines[1].split(': ')[1],
         date: lines[2].split(': ')[1],
         time: lines[3].split(': ')[1],
