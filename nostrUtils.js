@@ -179,37 +179,50 @@ async function fetchEventsDirectly(filter) {
 
 async function publishEventToNostr(eventDetails) {
     console.log('Publishing event to Nostr:', eventDetails);
-
     const privateKey = process.env.BOT_NSEC;
     if (!privateKey) {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
 
-    const publicKey = getPublicKey(privateKey);
     const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
     if (!calendarNaddr) {
         throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
     }
 
+    // Fetch the calendar event to get its pubkey
+    const decoded = nip19.decode(calendarNaddr);
+    const calendarFilter = {
+        kinds: [31924],
+        authors: [decoded.data.pubkey],
+        "#d": [decoded.data.identifier],
+    };
+    const calendarEvent = await fetchEventDirectly(calendarFilter);
+    if (!calendarEvent) {
+        throw new Error('Calendar event not found');
+    }
+
+    const calendarPubkey = calendarEvent.pubkey;
     const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
     const eventId = crypto.randomBytes(16).toString('hex');
 
     let eventTemplate = {
         kind: 31923,
         created_at: Math.floor(Date.now() / 1000),
-        pubkey: publicKey,
-        content: eventDetails.description,
+        pubkey: getPublicKey(privateKey), // Use the bot's pubkey for the event
         tags: [
             ['d', eventId],
             ['name', eventDetails.title],
             ['start', startTimestamp.toString()],
             ['start_tzid', "Europe/Zurich"],
             ['location', eventDetails.location],
-            ['p', publicKey, '', 'host'],
+            ['description', eventDetails.description],
+            ['p', calendarPubkey, '', 'host'], // Use the calendar's pubkey as the host
             ['a', calendarNaddr],
         ],
+        content: eventDetails.description, // NIP-52 suggests using content for backwards compatibility
     };
 
+    // Add optional fields if they exist
     if (eventDetails.end_date && eventDetails.end_time) {
         const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
         eventTemplate.tags.push(['end', endTimestamp.toString()]);
@@ -218,9 +231,6 @@ async function publishEventToNostr(eventDetails) {
     if (eventDetails.image) {
         eventTemplate.tags.push(['image', eventDetails.image]);
     }
-
-    // Generate the event ID
-    eventTemplate.id = getEventHash(eventTemplate);
 
     // This assigns the pubkey, calculates the event id and signs the event in a single step
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
