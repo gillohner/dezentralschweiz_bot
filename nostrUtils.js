@@ -24,23 +24,8 @@ const getEventHash = (event) => {
 };
 
 const fetchEventDirectly = async (filter) => {
-    if (filter.ids && filter.ids[0].startsWith('naddr1')) {
-        try {
-            const decoded = nip19.decode(filter.ids[0]);
-            if (decoded.type === 'naddr') {
-                filter = {
-                    kinds: [decoded.data.kind],
-                    authors: [decoded.data.pubkey],
-                    "#d": [decoded.data.identifier]
-                };
-            }
-        } catch (error) {
-            console.error('Error decoding NADDR:', error);
-            return null;
-        }
-    }
-
     console.log('Using decoded filter:', filter);
+    let eventFound = null;
 
     for (const relay of config.DEFAULT_RELAYS) {
         try {
@@ -82,15 +67,19 @@ const fetchEventDirectly = async (filter) => {
 
             if (event) {
                 console.log(`Event found on relay ${relay}:`, event);
-                return event;
+                eventFound = event;
+                break; // Stop querying other relays once the event is found
             }
         } catch (error) {
             console.error(`Error fetching event from relay ${relay}:`, error);
         }
     }
 
-    console.log('No event found on any relay');
-    return null;
+    if (!eventFound) {
+        console.log('No event found on any relay');
+    }
+
+    return eventFound;
 };
 
 async function fetchCalendarEvents(calendarNaddr) {
