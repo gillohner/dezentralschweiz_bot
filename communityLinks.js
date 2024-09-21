@@ -12,9 +12,17 @@ const communityLinks = {
       url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh'
     },
     {
+      name: 'Bitcoin Luzern',
+      url: 'https://t.me/bitcoinluzern'
+    },
+    {
+      name: '21⚡️BITCOIN WINTI',
+      url: 'https://t.me/+Tle8OoJnAJw2YWRk'
+    },
+    {
       name: 'Website 🔗',
       url: 'https://dezentralschweiz.ch'
-    }
+    },
   ],
   'Community Links': [{
       name: 'Podcast 🎙',
