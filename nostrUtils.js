@@ -247,7 +247,20 @@ async function publishEventToNostr(eventDetails) {
             // Publish updated calendar event
             for (const relay of config.DEFAULT_RELAYS) {
                 try {
-                    // ... existing code to publish updated calendar event ...
+                    console.log(`Publishing updated calendar event to relay: ${relay}`);
+                    const ws = new WebSocket(relay);
+                    await new Promise((resolve, reject) => {
+                        ws.on('open', () => {
+                            ws.send(JSON.stringify(['EVENT', updatedCalendarEvent]));
+                            console.log(`Updated calendar event sent to relay: ${relay}`);
+                            ws.close();
+                            resolve();
+                        });
+                        ws.on('error', (error) => {
+                            console.error(`Error connecting to relay ${relay}:`, error);
+                            reject(error);
+                        });
+                    });
                 } catch (error) {
                     console.error(`Error publishing updated calendar event to relay ${relay}:`, error);
                 }
