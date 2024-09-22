@@ -173,10 +173,10 @@ const publishEventToNostr = async (eventDetails) => {
     const calendarIdentifier = decoded.data.identifier;
 
     const eventId = crypto.randomBytes(16).toString('hex');
-    const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time.padStart(4, '0')}`).getTime() / 1000);
+    const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
 
     let eventTemplate = {
-        kind: 31923,
+        kind: 31923, // Time-Based Calendar Event
         created_at: Math.floor(Date.now() / 1000),
         pubkey: getPublicKey(privateKey),
         content: eventDetails.description,
@@ -189,14 +189,14 @@ const publishEventToNostr = async (eventDetails) => {
             ['description', eventDetails.description],
             ['p', calendarPubkey, '', 'host'],
             ['a', calendarNaddr],
-            ['about', eventDetails.description],
             ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
         ],
     };
 
     if (eventDetails.end_date && eventDetails.end_time) {
-        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time.padStart(4, '0')}`).getTime() / 1000);
+        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
         eventTemplate.tags.push(['end', endTimestamp.toString()]);
+        eventTemplate.tags.push(['end_tzid', "Europe/Zurich"]);
     }
 
     if (eventDetails.image) {
@@ -215,9 +215,7 @@ const publishEventToNostr = async (eventDetails) => {
         }
     }
 
-    if (eventDetails.kind !== 5) {
-        await updateCalendarEvent(signedEvent, privateKey);
-    }
+    await updateCalendarEvent(signedEvent, privateKey);
 
     return signedEvent;
 };

@@ -11,7 +11,7 @@ const startEventSuggestion = (bot, chatId, msg) => {
         firstName: msg.from.first_name || '',
         lastName: msg.from.last_name || ''
     };
-    bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:');
+    bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:\n\nDu kannst den Vorgang jederzeit mit /cancel abbrechen.');
 };
 
 const handleEventCreationStep = (bot, msg) => {
@@ -23,44 +23,70 @@ const handleEventCreationStep = (bot, msg) => {
     } = userStates[chatId];
     const text = msg.text;
 
+    if (text.toLowerCase() === '/cancel') {
+        return handleCancellation(bot, chatId);
+    }
+
     switch (step) {
         case 'title':
             userStates[chatId].title = text;
             userStates[chatId].step = 'date';
-            bot.sendMessage(chatId, 'Super! Nun gib bitte das Datum des Events ein (Format: YYYY-MM-DD):');
+            bot.sendMessage(chatId, 'Super! Nun gib bitte das Datum des Events ein (Format: YYYY-MM-DD):\n\nOder tippe /cancel um abzubrechen.');
             break;
         case 'date':
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+                bot.sendMessage(chatId, 'Ungültiges Datumsformat. Bitte verwende YYYY-MM-DD:\n\nOder tippe /cancel um abzubrechen.');
+                return;
+            }
             userStates[chatId].date = text;
             userStates[chatId].step = 'time';
-            bot.sendMessage(chatId, 'Gib jetzt die Uhrzeit des Events ein (Format: HH:MM):');
+            bot.sendMessage(chatId, 'Gib jetzt die Startzeit des Events ein (Format: HH:MM):\n\nOder tippe /cancel um abzubrechen.');
             break;
         case 'time':
+            if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(text)) {
+                bot.sendMessage(chatId, 'Ungültiges Zeitformat. Bitte verwende HH:MM:\n\nOder tippe /cancel um abzubrechen.');
+                return;
+            }
             userStates[chatId].time = text;
             userStates[chatId].step = 'location';
-            bot.sendMessage(chatId, 'Wo findet das Event statt?');
+            bot.sendMessage(chatId, 'Wo findet das Event statt?\n\nOder tippe /cancel um abzubrechen.');
             break;
         case 'location':
             userStates[chatId].location = text;
             userStates[chatId].step = 'description';
-            bot.sendMessage(chatId, 'Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:');
+            bot.sendMessage(chatId, 'Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.');
             break;
         case 'description':
             userStates[chatId].description = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
         case 'end_date':
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+                bot.sendMessage(chatId, 'Ungültiges Datumsformat. Bitte verwende YYYY-MM-DD:\n\nOder tippe /cancel um abzubrechen.');
+                return;
+            }
             userStates[chatId].end_date = text;
+            userStates[chatId].step = 'end_time';
+            bot.sendMessage(chatId, 'Gib jetzt die Endzeit des Events ein (Format: HH:MM):\n\nOder tippe /cancel um abzubrechen.');
+            break;
+        case 'end_time':
+            if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(text)) {
+                bot.sendMessage(chatId, 'Ungültiges Zeitformat. Bitte verwende HH:MM:\n\nOder tippe /cancel um abzubrechen.');
+                return;
+            }
+            userStates[chatId].end_time = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
         case 'image':
             userStates[chatId].image = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
-        case 'about':
-            userStates[chatId].about = text;
-            showOptionalFieldsMenu(bot, chatId);
-            break;
     }
+};
+
+const handleCancellation = (bot, chatId) => {
+    delete userStates[chatId];
+    bot.sendMessage(chatId, 'Meetup-Erstellung abgebrochen. Du kannst jederzeit mit /meetup_vorschlagen neu beginnen.');
 };
 
 const showOptionalFieldsMenu = (bot, chatId) => {
@@ -75,16 +101,16 @@ const showOptionalFieldsMenu = (bot, chatId) => {
                 callback_data: 'add_image'
             }],
             [{
-                text: 'Über-Text hinzufügen',
-                callback_data: 'add_about'
-            }],
-            [{
                 text: 'Zur Genehmigung senden',
                 callback_data: 'send_for_approval'
+            }],
+            [{
+                text: 'Abbrechen',
+                callback_data: 'cancel_creation'
             }]
         ]
     };
-    bot.sendMessage(chatId, 'Möchtest du optionale Felder hinzufügen oder das Event zur Genehmigung senden?', {
+    bot.sendMessage(chatId, 'Möchtest du optionale Felder hinzufügen, das Event zur Genehmigung senden oder abbrechen?', {
         reply_markup: JSON.stringify(keyboard)
     });
 };
@@ -125,8 +151,8 @@ Beschreibung: ${eventDetails.description}
 `;
 
     if (eventDetails.end_date) message += `Enddatum: ${eventDetails.end_date}\n`;
+    if (eventDetails.end_time) message += `Endzeit: ${eventDetails.end_time}\n`;
     if (eventDetails.image) message += `Bild-URL: ${eventDetails.image}\n`;
-    if (eventDetails.about) message += `Über: ${eventDetails.about}\n`;
 
     message += '\nMöchtest du dieses Event genehmigen?';
 
@@ -176,5 +202,6 @@ export {
     handleOptionalField,
     sendEventForApproval,
     extractEventDetails,
+    handleCancellation,
     userStates
 };

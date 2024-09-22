@@ -21,6 +21,7 @@ import {
     handleOptionalField,
     sendEventForApproval,
     extractEventDetails,
+    handleCancellation,
     userStates
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
@@ -402,6 +403,10 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         } else {
             bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.");
         }
+    } else if (action === 'cancel_creation') {
+        handleCancellation(bot, chatId);
+        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Meetup-Erstellung abgebrochen' });
+        await bot.deleteMessage(chatId, msg.message_id);
     }
 };
 
