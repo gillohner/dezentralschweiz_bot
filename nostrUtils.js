@@ -163,44 +163,63 @@ const publishEventToNostr = async (eventDetails) => {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
 
-    const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
-    if (!calendarNaddr) {
-        throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
-    }
+    const publicKey = getPublicKey(privateKey);
 
-    const decoded = nip19.decode(calendarNaddr);
-    const calendarPubkey = decoded.data.pubkey;
-    const calendarIdentifier = decoded.data.identifier;
+    let eventTemplate;
 
-    const eventId = crypto.randomBytes(16).toString('hex');
-    const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
+    if (eventDetails.kind === 5) {
+        // Deletion event
+        eventTemplate = {
+            kind: 5,
+            created_at: Math.floor(Date.now() / 1000),
+            pubkey: publicKey,
+            content: eventDetails.content || 'Event deleted',
+            tags: [
+                ['e', eventDetails.id],
+                ['a', eventDetails.a]
+            ],
+        };
+    } else {
+        // Creation event (kind 31923)
+        const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
+        if (!calendarNaddr) {
+            throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
+        }
 
-    let eventTemplate = {
-        kind: 31923, // Time-Based Calendar Event
-        created_at: Math.floor(Date.now() / 1000),
-        pubkey: getPublicKey(privateKey),
-        content: eventDetails.description,
-        tags: [
-            ['d', eventId],
-            ['name', eventDetails.title],
-            ['start', startTimestamp.toString()],
-            ['start_tzid', "Europe/Zurich"],
-            ['location', eventDetails.location],
-            ['description', eventDetails.description],
-            ['p', calendarPubkey, '', 'host'],
-            ['a', calendarNaddr],
-            ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
-        ],
-    };
+        const decoded = nip19.decode(calendarNaddr);
+        const calendarPubkey = decoded.data.pubkey;
+        const calendarIdentifier = decoded.data.identifier;
 
-    if (eventDetails.end_date && eventDetails.end_time) {
-        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
-        eventTemplate.tags.push(['end', endTimestamp.toString()]);
-        eventTemplate.tags.push(['end_tzid', "Europe/Zurich"]);
-    }
+        const eventId = crypto.randomBytes(16).toString('hex');
+        const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
 
-    if (eventDetails.image) {
-        eventTemplate.tags.push(['image', eventDetails.image]);
+        eventTemplate = {
+            kind: 31923, // Time-Based Calendar Event
+            created_at: Math.floor(Date.now() / 1000),
+            pubkey: publicKey,
+            content: eventDetails.description,
+            tags: [
+                ['d', eventId],
+                ['name', eventDetails.title],
+                ['start', startTimestamp.toString()],
+                ['start_tzid', "Europe/Zurich"],
+                ['location', eventDetails.location],
+                ['description', eventDetails.description],
+                ['p', calendarPubkey, '', 'host'],
+                ['a', calendarNaddr],
+                ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
+            ],
+        };
+
+        if (eventDetails.end_date && eventDetails.end_time) {
+            const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
+            eventTemplate.tags.push(['end', endTimestamp.toString()]);
+            eventTemplate.tags.push(['end_tzid', "Europe/Zurich"]);
+        }
+
+        if (eventDetails.image) {
+            eventTemplate.tags.push(['image', eventDetails.image]);
+        }
     }
 
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
@@ -215,7 +234,9 @@ const publishEventToNostr = async (eventDetails) => {
         }
     }
 
-    await updateCalendarEvent(signedEvent, privateKey);
+    if (eventTemplate.kind === 31923) {
+        await updateCalendarEvent(signedEvent, privateKey);
+    }
 
     return signedEvent;
 };

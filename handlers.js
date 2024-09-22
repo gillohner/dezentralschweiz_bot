@@ -115,9 +115,12 @@ const handleAdminApproval = async (bot, callbackQuery) => {
 
 const filterEventsByTimeFrame = (allEvents, timeFrame) => {
     const now = new Date();
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-    const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - now.getDay()), 23, 59, 59);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
     return allEvents.map(calendar => ({
         ...calendar,
@@ -125,13 +128,13 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
             const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
             switch (timeFrame) {
                 case 'today':
-                    return eventDate >= now && eventDate <= endOfDay;
+                    return eventDate >= today && eventDate <= endOfDay;
                 case 'week':
-                    return eventDate >= now && eventDate <= endOfWeek;
+                    return eventDate >= today && eventDate <= endOfWeek;
                 case 'month':
-                    return eventDate >= now && eventDate <= endOfMonth;
+                    return eventDate >= today && eventDate <= endOfMonth;
                 default:
-                    return true;
+                    return true; // 'all' case
             }
         })
     }));
@@ -281,7 +284,9 @@ const handleDeletionInput = async (bot, msg) => {
         try {
             const decoded = nip19.decode(text);
             if (decoded.type === 'note') {
-                filter = { ids: [decoded.data] };
+                filter = {
+                    ids: [decoded.data]
+                };
             } else if (decoded.type === 'naddr') {
                 filter = {
                     kinds: [decoded.data.kind],
@@ -405,7 +410,9 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         }
     } else if (action === 'cancel_creation') {
         handleCancellation(bot, chatId);
-        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Meetup-Erstellung abgebrochen' });
+        await bot.answerCallbackQuery(callbackQuery.id, {
+            text: 'Meetup-Erstellung abgebrochen'
+        });
         await bot.deleteMessage(chatId, msg.message_id);
     }
 };
