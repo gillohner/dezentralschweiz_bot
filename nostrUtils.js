@@ -104,7 +104,6 @@ async function fetchCalendarEvents(calendarNaddr) {
         }
 
         console.log('Calendar event found:', calendarEvent);
-        // Ensure only relevant events are fetched
         const eventReferences = calendarEvent.tags
             .filter(tag => tag[0] === 'a')
             .map(tag => {

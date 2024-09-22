@@ -143,9 +143,6 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
         let allEvents = [];
 
-        // Log NADDRs being processed
-        console.log('NADDR_LIST:', config.NADDR_LIST);
-
         for (const naddr of config.NADDR_LIST) {
             console.log(`Fetching events for calendar: ${naddr}`);
             const result = await fetchCalendarEvents(naddr);
@@ -163,12 +160,14 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
+
         if (filteredEvents.every(cal => cal.events.length === 0)) {
             await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`);
             return;
         }
 
         const message = formatMeetupsMessage(filteredEvents);
+
         if (message.length > 4096) {
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
@@ -183,12 +182,12 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 disable_web_page_preview: true
             });
         }
+
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
         await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
     }
 };
-
 
 const handleMeetups = async (bot, msg) => {
     const chatId = msg.chat.id;
@@ -275,43 +274,45 @@ Möchten Sie dieses Event löschen?
 const handleDeletionInput = async (bot, msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
-  
+
     if (userStates[chatId] && userStates[chatId].step === 'awaiting_event_id_for_deletion') {
-      let eventId, pubkey, kind;
-      try {
-        if (text.startsWith('nostr:')) {
-          const decoded = nip19.decode(text.slice(6));
-          if (decoded.type === 'note') {
-            eventId = decoded.data;
-          } else if (decoded.type === 'naddr') {
-            eventId = decoded.data.identifier;
-            pubkey = decoded.data.pubkey;
-            kind = decoded.data.kind;
-          }
-        } else {
-          eventId = text;
+        let eventId, pubkey, kind;
+        try {
+            if (text.startsWith('nostr:')) {
+                const decoded = nip19.decode(text.slice(6));
+                if (decoded.type === 'note') {
+                    eventId = decoded.data;
+                } else if (decoded.type === 'naddr') {
+                    eventId = decoded.data.identifier;
+                    pubkey = decoded.data.pubkey;
+                    kind = decoded.data.kind;
+                }
+            } else {
+                eventId = text;
+            }
+        } catch (error) {
+            console.error('Fehler beim Dekodieren von NADDR:', error);
+            bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
+            return;
         }
-      } catch (error) {
-        console.error('Fehler beim Dekodieren von NADDR:', error);
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
-        return;
-      }
-  
-      if (!eventId) {
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
-        return;
-      }
-  
-      const event = await fetchEventDirectly({ ids: [eventId] });
-      if (!event) { // Only send this once after all relays are checked
-        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut.");
-        return;
-      }
-  
-      userStates[chatId].eventToDelete = event;
-      sendDeletionRequestForApproval(bot, chatId, event);
+
+        if (!eventId) {
+            bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
+            return;
+        }
+
+        const event = await fetchEventDirectly({
+            ids: [eventId]
+        });
+        if (!event) { // Only send this once after all relays are checked
+            bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut.");
+            return;
+        }
+
+        userStates[chatId].eventToDelete = event;
+        sendDeletionRequestForApproval(bot, chatId, event);
     }
-  };
+};
 
 const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
     const privateKey = process.env.BOT_NSEC;
