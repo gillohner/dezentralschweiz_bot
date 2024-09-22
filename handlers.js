@@ -276,19 +276,19 @@ const handleDeletionInput = async (bot, msg) => {
     const text = msg.text;
 
     if (userStates[chatId] && userStates[chatId].step === 'awaiting_event_id_for_deletion') {
-        let eventId, pubkey, kind;
+        let filter;
         try {
-            if (text.startsWith('nostr:')) {
-                const decoded = nip19.decode(text.slice(6));
-                if (decoded.type === 'note') {
-                    eventId = decoded.data;
-                } else if (decoded.type === 'naddr') {
-                    eventId = decoded.data.identifier;
-                    pubkey = decoded.data.pubkey;
-                    kind = decoded.data.kind;
-                }
+            const decoded = nip19.decode(text);
+            if (decoded.type === 'note') {
+                filter = { ids: [decoded.data] };
+            } else if (decoded.type === 'naddr') {
+                filter = {
+                    kinds: [decoded.data.kind],
+                    authors: [decoded.data.pubkey],
+                    "#d": [decoded.data.identifier]
+                };
             } else {
-                eventId = text;
+                throw new Error('Unsupported Nostr type');
             }
         } catch (error) {
             console.error('Fehler beim Dekodieren von NADDR:', error);
@@ -296,15 +296,14 @@ const handleDeletionInput = async (bot, msg) => {
             return;
         }
 
-        if (!eventId) {
+        if (!filter) {
             bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
             return;
         }
 
-        const event = await fetchEventDirectly({
-            ids: [eventId]
-        });
-        if (!event) { // Only send this once after all relays are checked
+        console.log('Fetching event with filter:', filter);
+        const event = await fetchEventDirectly(filter);
+        if (!event) {
             bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut.");
             return;
         }
