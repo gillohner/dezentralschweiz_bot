@@ -241,7 +241,7 @@ const handleDeleteEventRequest = (bot, msg) => {
     userStates[chatId] = {
         step: 'awaiting_event_id_for_deletion'
     };
-    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein:");
+    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:");
 };
 
 const sendDeletionRequestForApproval = (bot, userChatId, eventToDelete) => {
@@ -279,44 +279,53 @@ const handleDeletionInput = async (bot, msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    if (userStates[chatId] && userStates[chatId].step === 'awaiting_event_id_for_deletion') {
-        let filter;
-        try {
-            const decoded = nip19.decode(text);
-            if (decoded.type === 'note') {
-                filter = {
-                    ids: [decoded.data]
-                };
-            } else if (decoded.type === 'naddr') {
-                filter = {
-                    kinds: [decoded.data.kind],
-                    authors: [decoded.data.pubkey],
-                    "#d": [decoded.data.identifier]
-                };
-            } else {
-                throw new Error('Unsupported Nostr type');
-            }
-        } catch (error) {
-            console.error('Fehler beim Dekodieren von NADDR:', error);
-            bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
-            return;
-        }
-
-        if (!filter) {
-            bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut.");
-            return;
-        }
-
-        console.log('Fetching event with filter:', filter);
-        const event = await fetchEventDirectly(filter);
-        if (!event) {
-            bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut.");
-            return;
-        }
-
-        userStates[chatId].eventToDelete = event;
-        sendDeletionRequestForApproval(bot, chatId, event);
+    if (!userStates[chatId] || userStates[chatId].step !== 'awaiting_event_id_for_deletion') {
+        return; // Exit if we're not expecting a deletion input
     }
+
+    if (text.toLowerCase() === '/cancel') {
+        delete userStates[chatId];
+        bot.sendMessage(chatId, "Löschungsvorgang abgebrochen.");
+        return;
+    }
+
+    let filter;
+    try {
+        const decoded = nip19.decode(text);
+        if (decoded.type === 'note') {
+            filter = {
+                ids: [decoded.data]
+            };
+        } else if (decoded.type === 'naddr') {
+            filter = {
+                kinds: [decoded.data.kind],
+                authors: [decoded.data.pubkey],
+                "#d": [decoded.data.identifier]
+            };
+        } else {
+            throw new Error('Unsupported Nostr type');
+        }
+    } catch (error) {
+        console.error('Fehler beim Dekodieren von NADDR:', error);
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        return;
+    }
+
+    if (!filter) {
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        return;
+    }
+
+    console.log('Fetching event with filter:', filter);
+    const event = await fetchEventDirectly(filter);
+    if (!event) {
+        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        return;
+    }
+
+    userStates[chatId].eventToDelete = event;
+    delete userStates[chatId].step; // Remove the step to stop looking for NADDR
+    sendDeletionRequestForApproval(bot, chatId, event);
 };
 
 const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
