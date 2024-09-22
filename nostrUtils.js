@@ -169,29 +169,18 @@ const publishEventToNostr = async (eventDetails) => {
     }
 
     const decoded = nip19.decode(calendarNaddr);
-    const calendarFilter = {
-        kinds: [31924],
-        authors: [decoded.data.pubkey],
-        "#d": [decoded.data.identifier],
-    };
-    const calendarEvent = await fetchEventDirectly(calendarFilter);
-    if (!calendarEvent) {
-        throw new Error('Calendar event not found');
-    }
+    const calendarPubkey = decoded.data.pubkey;
+    const calendarIdentifier = decoded.data.identifier;
 
-    const calendarPubkey = calendarEvent.pubkey;
     const eventId = crypto.randomBytes(16).toString('hex');
+    const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time.padStart(4, '0')}`).getTime() / 1000);
+
     let eventTemplate = {
-        kind: eventDetails.kind || 31923,
+        kind: 31923,
         created_at: Math.floor(Date.now() / 1000),
         pubkey: getPublicKey(privateKey),
-        tags: [],
-        content: eventDetails.content || '',
-    };
-
-    if (eventDetails.kind !== 5) {
-        const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
-        eventTemplate.tags = [
+        content: eventDetails.description,
+        tags: [
             ['d', eventId],
             ['name', eventDetails.title],
             ['start', startTimestamp.toString()],
@@ -200,19 +189,18 @@ const publishEventToNostr = async (eventDetails) => {
             ['description', eventDetails.description],
             ['p', calendarPubkey, '', 'host'],
             ['a', calendarNaddr],
-        ];
-        eventTemplate.content = eventDetails.description;
+            ['about', eventDetails.description],
+            ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
+        ],
+    };
 
-        if (eventDetails.end_date && eventDetails.end_time) {
-            const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
-            eventTemplate.tags.push(['end', endTimestamp.toString()]);
-        }
+    if (eventDetails.end_date && eventDetails.end_time) {
+        const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time.padStart(4, '0')}`).getTime() / 1000);
+        eventTemplate.tags.push(['end', endTimestamp.toString()]);
+    }
 
-        if (eventDetails.image) {
-            eventTemplate.tags.push(['image', eventDetails.image]);
-        }
-    } else {
-        eventTemplate.tags = eventDetails.tags || [];
+    if (eventDetails.image) {
+        eventTemplate.tags.push(['image', eventDetails.image]);
     }
 
     const signedEvent = finalizeEvent(eventTemplate, privateKey);
