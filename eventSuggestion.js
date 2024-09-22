@@ -178,19 +178,17 @@ Beschreibung: ${eventDetails.description}
 
 const extractEventDetails = (messageText) => {
     const lines = messageText.split('\n');
-    const details = {
-        creator: lines[0].split('von ')[1].split(' (')[0],
-        title: lines[1].split(': ')[1],
-        date: lines[2].split(': ')[1],
-        time: lines[3].split(': ')[1],
-        location: lines[4].split(': ')[1],
-        description: lines[5].split(': ')[1],
-    };
-
-    lines.slice(6).forEach(line => {
+    const details = {};
+    
+    lines.forEach(line => {
+        if (line.startsWith('Titel: ')) details.title = line.split(': ')[1];
+        if (line.startsWith('Datum: ')) details.date = line.split(': ')[1];
+        if (line.startsWith('Zeit: ')) details.time = line.split(': ')[1];
+        if (line.startsWith('Ort: ')) details.location = line.split(': ')[1];
+        if (line.startsWith('Beschreibung: ')) details.description = line.split(': ')[1];
         if (line.startsWith('Enddatum: ')) details.end_date = line.split(': ')[1];
+        if (line.startsWith('Endzeit: ')) details.end_time = line.split(': ')[1];
         if (line.startsWith('Bild-URL: ')) details.image = line.split(': ')[1];
-        if (line.startsWith('Über: ')) details.about = line.split(': ')[1];
     });
 
     return details;

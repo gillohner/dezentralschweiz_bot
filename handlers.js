@@ -172,7 +172,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             return;
         }
 
-        const message = formatMeetupsMessage(filteredEvents);
+        const message = await formatMeetupsMessage(filteredEvents);
         if (message.length > 4096) {
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {

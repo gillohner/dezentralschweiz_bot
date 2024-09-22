@@ -25,107 +25,81 @@ const getEventHash = (event) => {
 
 const fetchEventDirectly = async (filter) => {
     console.log('Using decoded filter:', filter);
-    let eventFound = null;
 
-    for (const relay of config.DEFAULT_RELAYS) {
-        try {
-            console.log(`Trying relay: ${relay}`);
-            const event = await new Promise((resolve, reject) => {
-                const ws = new WebSocket(relay);
-                const timeout = setTimeout(() => {
-                    ws.close();
-                    reject(new Error('Timeout'));
-                }, 10000);
+    try {
+        console.log(`Fetching from relay: ${config.FETCH_RELAY}`);
+        const event = await new Promise((resolve, reject) => {
+            const ws = new WebSocket(config.FETCH_RELAY);
+            const timeout = setTimeout(() => {
+                ws.close();
+                reject(new Error('Timeout'));
+            }, 10000);
 
-                ws.on('open', () => {
-                    console.log(`Connected to relay: ${relay}`);
-                    const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
-                    ws.send(subscriptionMessage);
-                    console.log(`Sent subscription message: ${subscriptionMessage}`);
-                });
-
-                ws.on('message', (data) => {
-                    const message = JSON.parse(data);
-                    console.log(`Received message from ${relay}:`, message);
-                    if (message[0] === 'EVENT' && message[1] === 'my-sub') {
-                        clearTimeout(timeout);
-                        ws.close();
-                        resolve(message[2]);
-                    } else if (message[0] === 'EOSE') {
-                        clearTimeout(timeout);
-                        ws.close();
-                        resolve(null);
-                    }
-                });
-
-                ws.on('error', (error) => {
-                    console.error(`WebSocket error for ${relay}:`, error);
-                    clearTimeout(timeout);
-                    reject(error);
-                });
+            ws.on('open', () => {
+                console.log(`Connected to relay: ${config.FETCH_RELAY}`);
+                const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
+                ws.send(subscriptionMessage);
+                console.log(`Sent subscription message: ${subscriptionMessage}`);
             });
 
-            if (event) {
-                console.log(`Event found on relay ${relay}:`, event);
-                
-                // Check for deletion events
-                const deletionEvent = await checkForDeletionEvent(event.id, relay);
-                if (deletionEvent) {
-                    console.log(`Event ${event.id} has been deleted. Deletion event:`, deletionEvent);
-                    continue; // Skip this event and check the next relay
+            ws.on('message', (data) => {
+                const message = JSON.parse(data);
+                if (message[0] === 'EVENT' && message[1] === 'my-sub') {
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve(message[2]);
+                } else if (message[0] === 'EOSE') {
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve(null);
                 }
-                
-                eventFound = event;
-                break; // Stop querying other relays once the event is found
+            });
+
+            ws.on('error', (error) => {
+                console.error(`WebSocket error for ${config.FETCH_RELAY}:`, error);
+                clearTimeout(timeout);
+                reject(error);
+            });
+        });
+
+        if (event) {
+            console.log(`Event found on relay ${config.FETCH_RELAY}:`, event);
+            // Check for deletion events
+            const deletionEvent = await checkForDeletionEvent(event.id);
+            if (deletionEvent) {
+                console.log(`Event ${event.id} has been deleted. Deletion event:`, deletionEvent);
+                return null;
             }
-        } catch (error) {
-            console.error(`Error fetching event from relay ${relay}:`, error);
+            return event;
         }
+    } catch (error) {
+        console.error(`Error fetching event from relay ${config.FETCH_RELAY}:`, error);
     }
 
-    if (!eventFound) {
-        console.log('No event found on any relay');
-    }
-
-    return eventFound;
+    console.log('No event found on the fetch relay');
+    return null;
 };
 
-const checkForDeletionEvent = async (eventId, relay) => {
+
+export const checkForDeletionEvent = async (eventId) => {
     const deletionFilter = {
         kinds: [5],
         '#e': [eventId]
     };
 
-    return new Promise((resolve, reject) => {
-        const ws = new WebSocket(relay);
-        const timeout = setTimeout(() => {
-            ws.close();
-            resolve(null); // Resolve with null if timeout occurs
-        }, 5000);
+    try {
+        console.log(`Checking for deletion event on relay: ${config.FETCH_RELAY}`);
+        const deletionEvent = await fetchEventDirectly(deletionFilter);
+        if (deletionEvent) {
+            console.log(`Deletion event found for ${eventId} on relay ${config.FETCH_RELAY}`);
+            return true; // Deletion event found
+        }
+    } catch (error) {
+        console.error(`Error checking for deletion event on relay ${config.FETCH_RELAY}:`, error);
+    }
 
-        ws.on('open', () => {
-            ws.send(JSON.stringify(["REQ", "deletion-check", deletionFilter]));
-        });
-
-        ws.on('message', (data) => {
-            const message = JSON.parse(data);
-            if (message[0] === 'EVENT' && message[2].kind === 5) {
-                clearTimeout(timeout);
-                ws.close();
-                resolve(message[2]);
-            } else if (message[0] === 'EOSE') {
-                clearTimeout(timeout);
-                ws.close();
-                resolve(null);
-            }
-        });
-
-        ws.on('error', (error) => {
-            console.error(`WebSocket error for ${relay}:`, error);
-            clearTimeout(timeout);
-            reject(error);
-        });
-    });
+    console.log(`No deletion event found for ${eventId}`);
+    return false; // No deletion event found
 };
 
 async function fetchCalendarEvents(calendarNaddr) {
@@ -206,13 +180,13 @@ const fetchEvents = async (eventReferences) => {
 
 const publishEventToNostr = async (eventDetails) => {
     console.log('Publishing event to Nostr:', eventDetails);
+
     const privateKey = process.env.BOT_NSEC;
     if (!privateKey) {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
 
     const publicKey = getPublicKey(privateKey);
-
     let eventTemplate;
 
     if (eventDetails.kind === 5) {
@@ -273,6 +247,7 @@ const publishEventToNostr = async (eventDetails) => {
     }
 
     if (eventTemplate.kind === 31923) {
+        console.log("Trying to update calendar: ", signedEvent)
         await updateCalendarEvent(signedEvent, privateKey);
     }
 
