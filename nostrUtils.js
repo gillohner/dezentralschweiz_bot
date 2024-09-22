@@ -67,6 +67,14 @@ const fetchEventDirectly = async (filter) => {
 
             if (event) {
                 console.log(`Event found on relay ${relay}:`, event);
+                
+                // Check for deletion events
+                const deletionEvent = await checkForDeletionEvent(event.id, relay);
+                if (deletionEvent) {
+                    console.log(`Event ${event.id} has been deleted. Deletion event:`, deletionEvent);
+                    continue; // Skip this event and check the next relay
+                }
+                
                 eventFound = event;
                 break; // Stop querying other relays once the event is found
             }
@@ -80,6 +88,44 @@ const fetchEventDirectly = async (filter) => {
     }
 
     return eventFound;
+};
+
+const checkForDeletionEvent = async (eventId, relay) => {
+    const deletionFilter = {
+        kinds: [5],
+        '#e': [eventId]
+    };
+
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket(relay);
+        const timeout = setTimeout(() => {
+            ws.close();
+            resolve(null); // Resolve with null if timeout occurs
+        }, 5000);
+
+        ws.on('open', () => {
+            ws.send(JSON.stringify(["REQ", "deletion-check", deletionFilter]));
+        });
+
+        ws.on('message', (data) => {
+            const message = JSON.parse(data);
+            if (message[0] === 'EVENT' && message[2].kind === 5) {
+                clearTimeout(timeout);
+                ws.close();
+                resolve(message[2]);
+            } else if (message[0] === 'EOSE') {
+                clearTimeout(timeout);
+                ws.close();
+                resolve(null);
+            }
+        });
+
+        ws.on('error', (error) => {
+            console.error(`WebSocket error for ${relay}:`, error);
+            clearTimeout(timeout);
+            reject(error);
+        });
+    });
 };
 
 async function fetchCalendarEvents(calendarNaddr) {
@@ -151,7 +197,9 @@ const fetchEvents = async (eventReferences) => {
             "#d": [ref.identifier],
         };
         const event = await fetchEventDirectly(filter);
-        if (event) events.push(event);
+        if (event) {
+            events.push(event);
+        }
     }
     return events;
 };
