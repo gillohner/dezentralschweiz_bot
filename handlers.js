@@ -143,6 +143,9 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
         let allEvents = [];
 
+        // Log NADDRs being processed
+        console.log('NADDR_LIST:', config.NADDR_LIST);
+
         for (const naddr of config.NADDR_LIST) {
             console.log(`Fetching events for calendar: ${naddr}`);
             const result = await fetchCalendarEvents(naddr);
@@ -160,14 +163,12 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
-
         if (filteredEvents.every(cal => cal.events.length === 0)) {
             await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`);
             return;
         }
 
         const message = formatMeetupsMessage(filteredEvents);
-
         if (message.length > 4096) {
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
@@ -182,7 +183,6 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 disable_web_page_preview: true
             });
         }
-
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
         await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
