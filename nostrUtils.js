@@ -168,17 +168,7 @@ const publishEventToNostr = async (eventDetails) => {
     let eventTemplate;
 
     if (eventDetails.kind === 5) {
-        // Deletion event
-        eventTemplate = {
-            kind: 5,
-            created_at: Math.floor(Date.now() / 1000),
-            pubkey: publicKey,
-            content: eventDetails.content || 'Event deleted',
-            tags: [
-                ['e', eventDetails.id],
-                ['a', eventDetails.a]
-            ],
-        };
+        eventTemplate = eventDetails;
     } else {
         // Creation event (kind 31923)
         const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
