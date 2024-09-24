@@ -65,6 +65,10 @@ const communityLinks = {
     {
       name: 'Berglinde Newsletter',
       url: 'https://news.berglinde.com/'
+    },
+    {
+      name: "#theOrangeVision",
+      url: "https://theorangevision.ch/"
     }
   ],
   'Vereine': [
