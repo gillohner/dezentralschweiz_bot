@@ -69,6 +69,10 @@ const communityLinks = {
     {
       name: "#theOrangeVision",
       url: "https://theorangevision.ch/"
+    },
+    {
+      name: "Bitcoin Block",
+      url: "https://bitcoinblock.study/"
     }
   ],
   'Vereine': [
