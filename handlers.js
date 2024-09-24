@@ -188,7 +188,6 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 parse_mode: 'HTML',
                 disable_web_page_preview: true,
                 disable_notification: true,
-                disable_notification: true
             });
         }
     } catch (error) {
@@ -406,7 +405,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         await bot.answerCallbackQuery(callbackQuery.id);
         await bot.sendMessage(chatId, message, {
             parse_mode: 'HTML',
-            disable_web_page_preview: true
+            disable_web_page_preview: true,
             disable_notification: true
         });
     } else if (action.startsWith('approve_') || action.startsWith('reject_')) {
