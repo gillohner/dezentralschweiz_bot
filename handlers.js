@@ -48,7 +48,8 @@ Aktualisiere die Liste der verfügbaren Befehle, falls Änderungen vorgenommen w
 Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir gerne zur Verfügung.
 `;
     await bot.sendMessage(chatId, message, {
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        disable_notification: true
     });
 };
 
@@ -144,7 +145,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     const chatId = msg.chat.id;
     console.log('Fetching calendar events...');
     try {
-        await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...');
+        await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', {disable_notification: true});
         let allEvents = [];
 
         // Log NADDRs being processed
@@ -162,13 +163,13 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         if (allEvents.length === 0) {
-            await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.');
+            await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.', {disable_notification: true});
             return;
         }
 
         const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
         if (filteredEvents.every(cal => cal.events.length === 0)) {
-            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`);
+            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {disable_notification: true});
             return;
         }
 
@@ -178,18 +179,21 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             for (const chunk of chunks) {
                 await bot.sendMessage(chatId, chunk, {
                     parse_mode: 'HTML',
-                    disable_web_page_preview: true
+                    disable_web_page_preview: true,
+                    disable_notification: true
                 });
             }
         } else {
             await bot.sendMessage(chatId, message, {
                 parse_mode: 'HTML',
-                disable_web_page_preview: true
+                disable_web_page_preview: true,
+                disable_notification: true,
+                disable_notification: true
             });
         }
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.');
+        await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', {disable_notification: true});
     }
 };
 
@@ -217,6 +221,7 @@ const handleMeetups = async (bot, msg) => {
     };
     await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
         reply_markup: JSON.stringify(keyboard)
+        disable_notification: true
     });
 };
 
@@ -224,10 +229,10 @@ const handleRefreshCommands = async (bot, msg) => {
     const chatId = msg.chat.id;
     try {
         await setupCommands(bot);
-        bot.sendMessage(chatId, 'Befehle wurden erfolgreich aktualisiert!');
+        bot.sendMessage(chatId, 'Befehle wurden erfolgreich aktualisiert!', {disable_notification: true});
     } catch (error) {
         console.error('Error refreshing commands:', error);
-        bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
+        bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.', {disable_notification: true});
     }
 };
 
@@ -241,7 +246,7 @@ const handleDeleteEventRequest = (bot, msg) => {
     userStates[chatId] = {
         step: 'awaiting_event_id_for_deletion'
     };
-    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:");
+    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:", {disable_notification: true});
 };
 
 const sendDeletionRequestForApproval = (bot, userChatId, eventToDelete) => {
@@ -272,7 +277,7 @@ Möchten Sie dieses Event löschen?
     bot.sendMessage(adminChatId, message, {
         reply_markup: JSON.stringify(keyboard)
     });
-    bot.sendMessage(userChatId, 'Ihre Löschungsanfrage wurde zur Genehmigung an die Administratoren gesendet. Wir werden Sie benachrichtigen, sobald eine Entscheidung getroffen wurde.');
+    bot.sendMessage(userChatId, 'Ihre Löschungsanfrage wurde zur Genehmigung an die Administratoren gesendet. Wir werden Sie benachrichtigen, sobald eine Entscheidung getroffen wurde.', {disable_notification: true});
 };
 
 const handleDeletionInput = async (bot, msg) => {
@@ -285,7 +290,7 @@ const handleDeletionInput = async (bot, msg) => {
 
     if (text.toLowerCase() === '/cancel') {
         delete userStates[chatId];
-        bot.sendMessage(chatId, "Löschungsvorgang abgebrochen.");
+        bot.sendMessage(chatId, "Löschungsvorgang abgebrochen.", {disable_notification: true});
         return;
     }
 
@@ -307,19 +312,19 @@ const handleDeletionInput = async (bot, msg) => {
         }
     } catch (error) {
         console.error('Fehler beim Dekodieren von NADDR:', error);
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {disable_notification: true});
         return;
     }
 
     if (!filter) {
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {disable_notification: true});
         return;
     }
 
     console.log('Fetching event with filter:', filter);
     const event = await fetchEventDirectly(filter);
     if (!event) {
-        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.");
+        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {disable_notification: true});
         return;
     }
 
@@ -378,7 +383,8 @@ const handleLinks = (bot, msg, communityLinks) => {
         }])
     };
     bot.sendMessage(chatId, 'Wähle eine Kategorie:', {
-        reply_markup: JSON.stringify(keyboard)
+        reply_markup: JSON.stringify(keyboard),
+        disable_notification: true
     });
 };
 
@@ -401,6 +407,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         await bot.sendMessage(chatId, message, {
             parse_mode: 'HTML',
             disable_web_page_preview: true
+            disable_notification: true
         });
     } else if (action.startsWith('approve_') || action.startsWith('reject_')) {
         await handleAdminApproval(bot, callbackQuery);
@@ -415,7 +422,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
             sendEventForApproval(bot, chatId, userStates[chatId]);
             delete userStates[chatId];
         } else {
-            bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.");
+            bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {disable_notification: true});
         }
     } else if (action === 'cancel_creation') {
         handleCancellation(bot, chatId);
@@ -436,7 +443,8 @@ const handleMeetupSuggestion = (bot, msg) => {
                         url: `https://t.me/${bot.username}`
                     }]
                 ]
-            }
+            },
+            disable_notification: true
         });
         return;
     }
@@ -453,7 +461,8 @@ const handleMeetupDeletion = (bot, msg) => {
                         url: `https://t.me/${bot.username}`
                     }]
                 ]
-            }
+            },
+            disable_notification: true
         });
         return;
     }
