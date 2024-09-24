@@ -220,7 +220,7 @@ const handleMeetups = async (bot, msg) => {
         ]
     };
     await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
-        reply_markup: JSON.stringify(keyboard)
+        reply_markup: JSON.stringify(keyboard),
         disable_notification: true
     });
 };
