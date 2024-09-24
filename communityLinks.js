@@ -1,5 +1,6 @@
 const communityLinks = {
-  'Community Gruppen': [{
+  'Community Gruppen': [
+    {
       name: 'Bitcoin Gruppe 💬',
       url: 'https://t.me/+iu9fNXw0NeE4ZmE0'
     },
@@ -20,11 +21,20 @@ const communityLinks = {
       url: 'https://t.me/+Tle8OoJnAJw2YWRk'
     },
     {
+      name: 'Einundzwanzig Meetup Einsiedeln',
+      url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
+    },
+    {
+      name: 'Bitcoin Block Infokanal',
+      url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
+    }
+  ],
+  'Community Links': [
+    {
       name: 'Website 🔗',
       url: 'https://dezentralschweiz.ch'
     },
-  ],
-  'Community Links': [{
+    {
       name: 'Podcast 🎙',
       url: 'https://feeds.rssblue.com/dezentralschweiz'
     },
@@ -57,7 +67,8 @@ const communityLinks = {
       url: 'https://news.berglinde.com/'
     }
   ],
-  'Vereine': [{
+  'Vereine': [
+    {
       name: 'Bitcoin Baden',
       url: 'https://bitcoinbaden.ch'
     },
