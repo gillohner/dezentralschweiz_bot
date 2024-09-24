@@ -1,5 +1,7 @@
 # Dezentralschweiz Bot
 
+- Readme is outdated. Information is missing. 
+
 The **Dezentralschweiz Bot** is a Telegram bot designed to provide users with information about upcoming meetups in the [Dezentralschweiz](https://dezentralschweiz.ch/) community. It fetches events from various relays using the Nostr protocol and displays them in a user-friendly format.
 
 ## Features
