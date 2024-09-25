@@ -52,10 +52,6 @@ const communityLinks = {
       url: 'https://dezentralshop.ch'
     },
     {
-      name: 'Lipa',
-      url: 'https://lipa.swiss'
-    },
-    {
       name: 'Bitcoin Reise',
       url: 'https://youtube.com/@bitcoinreise?si=ZQ6GmiUoAXPRw9Cs'
     },
@@ -89,7 +85,7 @@ const communityLinks = {
       name: "21 Lessons",
       url: "https://21lessons.com/"
     }
-  ]
+  ],
   'Vereine': [
     {
       name: 'Bitcoin Baden',
@@ -102,6 +98,28 @@ const communityLinks = {
     {
       name: 'Bitcoin Association Switzerland (BAS)',
       url: 'https://www.bitcoinassociation.ch'
+    }
+  ],
+  'Unternehmen': [
+    {
+      name: 'Lipa',
+      url: 'https://lipa.swiss'
+    },
+    {
+      name: 'Pocket',
+      url: 'https://pocketbitcoin.com/'
+    },
+    {
+      name: 'Bitagent',
+      url: 'http://bitagent.ch/'
+    },
+    {
+      name: 'Relai',
+      url: 'https://relai.app/'
+    },
+    {
+      name: 'Bittr',
+      url: 'https://getbittr.com/'
     }
   ]
 };
