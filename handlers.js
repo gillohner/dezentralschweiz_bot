@@ -88,6 +88,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
         if (isApproved) {
+            console.log('no yet extracted:', callbackQuery.message.text)
             const eventDetails = extractEventDetails(callbackQuery.message.text);
             console.log('Extracted event details:', eventDetails);
             try {
@@ -366,6 +367,7 @@ const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
 };
 
 const handleMessage = (bot, msg) => {
+    console.log("message", msg);
     if (msg.chat.type === 'private') {
         const chatId = msg.chat.id;
         if (userStates[chatId]?.step === 'awaiting_event_id_for_deletion') {
