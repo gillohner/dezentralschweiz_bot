@@ -29,6 +29,7 @@ const communityLinks = {
     {
       name: "Bitcoin Alps",
       url: "https://t.me/bitcoin_alps"
+    }
   ],
   'Info Gruppen': [
     {
