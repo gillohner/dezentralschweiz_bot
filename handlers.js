@@ -409,9 +409,7 @@ const handleMessage = (bot, msg) => {
     } else {
         // Check for trigger words in group chats
         const text = msg.text.toLowerCase();
-
-        console.log("triggerword: ", text);
-
+        
         // Check for Ethereum trigger words
         if (ethereumTriggerWords.some(word => text.includes(word))) {
             const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
