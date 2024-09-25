@@ -26,29 +26,32 @@ import {
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
 import cooldown from './cooldown.js';
+import ethereumTriggerWords from './pocketEthereum.js';
 
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const handleStart = async (bot, msg) => {
     const chatId = msg.chat.id;
     const message = `
-Willkommen beim Dezentralschweiz Bot! 🇨🇭
+<b>Willkommen beim Dezentralschweiz Bot! 🇨🇭</b>
 
-Hier sind die verfügbaren Befehle:
+Hier sind die wichtigsten Befehle:
 
 /meetups - Zeige bevorstehende Meetups
-Erhalte eine Liste aller anstehenden Veranstaltungen in der Dezentralschweiz Community.
+<i>Erhalte eine Liste aller anstehenden Veranstaltungen in der Dezentralschweiz Community.</i>
 
 /links - Zeige Community-Links
-Entdecke wichtige Links und Ressourcen unserer Community.
+<i>Entdecke wichtige Links und Ressourcen unserer Community.</i>
 
 /meetup_vorschlagen - Schlage ein neues Event vor
-Möchtest du ein Meetup organisieren? Nutze diesen Befehl, um dein Event vorzuschlagen.
+<i>Möchtest du ein Meetup organisieren? Nutze diesen Befehl, um ein Nostr-Event vorzuschlagen. (DM only)</i>
 
-/refresh_commands - Aktualisiere die Befehlsliste
-Aktualisiere die Liste der verfügbaren Befehle, falls Änderungen vorgenommen wurden.
+/meetup_loeschen - Schlage ein neues Event vor
+<i>Hast du beim erstellen eines Meetups einen Fehler gemacht oder das Meetup wurde abgesagt? Nutze diesen Befehl um ein Nostr Delete-Event abzusenden. (DM only)</i>
 
 Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir gerne zur Verfügung.
+
+<blockquote>Made with ❤️ by @g1ll0hn3r</blockquote>
 `;
     await bot.sendMessage(chatId, message, {
         parse_mode: 'HTML',
@@ -88,6 +91,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
         if (isApproved) {
+            console.log('no yet extracted:', callbackQuery.message.text)
             const eventDetails = extractEventDetails(callbackQuery.message.text);
             console.log('Extracted event details:', eventDetails);
             try {
@@ -373,6 +377,16 @@ const handleMessage = (bot, msg) => {
         } else {
             handleEventCreationStep(bot, msg);
         }
+    } else {
+        // Check for Ethereum trigger words in group chats
+        const text = msg.text.toLowerCase();
+        if (ethereumTriggerWords.some(word => text.includes(word))) {
+            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit <a href='https://pocketethereum.com'>pocketethereum.com</a>";
+            bot.sendMessage(msg.chat.id, response, {
+                parse_mode: 'HTML',
+                disable_notification: true
+            });
+        }
     }
 };
 
@@ -439,6 +453,14 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         handleCancellation(bot, chatId);
         await bot.answerCallbackQuery(callbackQuery.id, { text: 'Meetup-Erstellung abgebrochen' });
         await bot.deleteMessage(chatId, msg.message_id);
+    } else if (action === 'confirm_location') {
+        const locationData = userStates[chatId].tempLocation.data;
+        userStates[chatId].location = locationData.display_name;
+        userStates[chatId].step = 'description';
+        bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+    } else if (action === 'retry_location') {
+        userStates[chatId].step = 'location';
+        bot.sendMessage(chatId, 'Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
     }
 };
 

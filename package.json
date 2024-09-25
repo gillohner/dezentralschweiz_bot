@@ -12,6 +12,8 @@
     "@nostr-dev-kit/ndk": "^2.10.0",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
+    "ngeohash": "^0.6.3",
+    "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.66.0",
     "nostr-tools": "^2.7.2",
     "ws": "^8.18.0"
