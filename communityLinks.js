@@ -1,5 +1,5 @@
 const communityLinks = {
-  'Community Gruppen': [
+  'Dezentralschweiz Gruppen': [
     {
       name: 'Bitcoin Gruppe 💬',
       url: 'https://t.me/+iu9fNXw0NeE4ZmE0'
@@ -11,7 +11,9 @@ const communityLinks = {
     {
       name: 'Offtopic Gruppe 👀',
       url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh'
-    },
+    }
+  ],
+  'Meetup Gruppen': [
     {
       name: 'Bitcoin Luzern',
       url: 'https://t.me/bitcoinluzern'
@@ -29,6 +31,12 @@ const communityLinks = {
       url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
     }
   ],
+  'Info Gruppen': [
+    {
+      name: 'Bitcoin Block Infokanal',
+      url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
+    }
+  ],
   'Community Links': [
     {
       name: 'Website 🔗',
@@ -41,14 +49,6 @@ const communityLinks = {
     {
       name: 'Dezentralshop 🛒',
       url: 'https://dezentralshop.ch'
-    },
-    {
-      name: 'Education B',
-      url: '@CHeducationBTC'
-    },
-    {
-      name: 'Bitcoin Mentoring',
-      url: 'https://www.bitcoin-mentoring.me'
     },
     {
       name: 'Lipa',
@@ -69,12 +69,26 @@ const communityLinks = {
     {
       name: "#theOrangeVision",
       url: "https://theorangevision.ch/"
+    }
+  ],
+  'Education': [
+    {
+      name: 'Education B',
+      url: '@CHeducationBTC'
+    },
+    {
+      name: 'Bitcoin Mentoring',
+      url: 'https://www.bitcoin-mentoring.me'
     },
     {
       name: "Bitcoin Block",
       url: "https://bitcoinblock.study/"
+    },
+    {
+      name: "21 Lessons",
+      url: "https://21lessons.com/"
     }
-  ],
+  ]
   'Vereine': [
     {
       name: 'Bitcoin Baden',
