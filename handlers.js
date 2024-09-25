@@ -411,7 +411,7 @@ const handleMessage = (bot, msg) => {
         const text = msg.text.toLowerCase();
 
         console.log("triggerword: ", text);
-        
+
         // Check for Ethereum trigger words
         if (ethereumTriggerWords.some(word => text.includes(word))) {
             const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
@@ -420,7 +420,7 @@ const handleMessage = (bot, msg) => {
                 disable_notification: true
             });
         }
-        
+
         // Check for other shitcoin trigger words
         else if (shitcoinTriggerWords.some(word => text.includes(word))) {
             const response = shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
@@ -550,6 +550,20 @@ const handleMeetupDeletion = (bot, msg) => {
     handleDeleteEventRequest(bot, msg);
 };
 
+const handleGetGroupId = async (bot, msg) => {
+    if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
+        const groupId = msg.chat.id;
+        const groupName = msg.chat.title;
+        const message = `Group ID: ${groupId}\nGroup Name: ${groupName}`;
+
+        // Send to admin chat
+        await bot.sendMessage(config.ADMIN_CHAT_ID, message);
+
+        // Optionally, delete the command message to keep it hidden
+        await bot.deleteMessage(msg.chat.id, msg.message_id);
+    }
+};
+
 export {
     handleStart,
     handleMeetups,
@@ -565,5 +579,6 @@ export {
     handleCallbackQuery,
     handleLinks,
     handleMeetupSuggestion,
-    handleMeetupDeletion
+    handleMeetupDeletion,
+    handleGetGroupId
 };
