@@ -1,11 +1,10 @@
 const ethereumTriggerWords = [
     "ethereum", "eth", "ether", "vitalik", "buterin", "evm", "gwei", "solidity", "vyper", "ethash",
-    "casper", "serenity", "beacon chain", "sharding", "eip", "gas", "wei", "keccak-256", "merkle patricia tree", "uncle block",
-    "dao", "the dao", "parity", "metamask", "myetherwallet", "infura", "etherscan", "prysm", "geth", "openethereum",
-    "nethermind", "besu", "erigon", "erc-20", "erc-721", "erc-1155", "ens", "plasma", "raiden", "zkrollup",
+    "dao", "the dao", "parity", "myetherwallet", "infura", "etherscan", "prysm", "geth", "openethereum",
+    "erc-20", "erc-721", "erc-1155", "ens", "plasma", "raiden", "zkrollup",
     "optimistic rollup", "eth2", "ethereum 2.0", "proof of stake", "validator", "staking", "slashing", "attestation", "epoch",
-    "finality", "deposit contract", "shard chain", "crosslink", "state rent", "ewasm", "whisper", "swarm", "les", "ethash",
-    "etherium", "ethirium", "ithirium", "ethreum", "etherum", "etherium", "etheruem", "etherium classic", "ethereum classic", "etc"
+    "finality", "crosslink", "ethash",
+    "etherium", "ethirium", "ithirium", "ethreum", "etherum", "etherium", "etheruem"
 ];
 
 const ethereumResponses = [
@@ -22,16 +21,16 @@ const ethereumResponses = [
 ];
 
 const shitcoinTriggerWords = [
-    "binance coin", "bnb", "solana", "sol", "xrp", "ripple", "cardano", "ada",
+    "binance coin", "bnb", "solana", "sol", "xrp", "ripple", "cardano", "ada", "casper", "serenity", "beacon chain",
     "dogecoin", "doge", "doges", "polygon", "matic", "polkadot", "dot",
     "chainlink", "link", "litecoin", "ltc", "lites", "avalanche", "avax",
     "uniswap", "uni", "stellar", "xlm", "lumens", "monero", "xmr", "cosmos", "atom",
     "algorand", "algo", "vechain", "vet", "filecoin", "fil", "internet computer", "icp",
-    "dfinity", "tezos", "xtz", "eos", "aave", "the graph", "grt", "decentraland", "mana",
+    "dfinity", "tezos", "xtz", "eos", "aave", "the graph", "grt", "decentraland", "mana", "nethermind", "besu", "erigon",
     "shiba inu", "shib", "shiba", "web3", "nft", "blockchain", "dlt", "defi", "dao",
     "dapp", "smart contract", "token", "altcoin", "memecoin", "ico", "yield farming",
     "liquidity pool", "dex", "cex", "wallet", "gas fee", "interoperability", "consensus",
-    "proof of stake", "forks", "airdrops", "metaverse", "gamefi", "play-to-earn",
+    "proof of stake", "forks", "airdrops", "metaverse", "gamefi", "play-to-earn", "metamask",
     "tokenomics", "whitepaper", "hodl", "fud", "fomo", "pump and dump", "rug pull",
     "to the moon", "diamond hands", "paper hands",
     "bitcoin cash", "bcash", "bch", "bitcoin sv", "bsv", "tron", "trx", "neo",
@@ -56,7 +55,7 @@ const shitcoinTriggerWords = [
     "voyager token", "vgx", "ergo", "erg", "telcoin", "tel", "conflux", "cfx",
     "wrapped bitcoin", "wbtc", "wrapped ethereum", "weth", "pepe", "pepe",
     "floki inu", "floki", "safemoon", "safemoon", "bonk", "bonk", "aptos", "apt",
-    "optimism", "op", "arbitrum", "arb", "worldcoin", "wld"
+    "optimism", "op", "arbitrum", "arb", "worldcoin", "wld", "deposit contract", "shard chain"
 ];
 
 const shitCoinResponses = [
