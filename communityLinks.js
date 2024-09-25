@@ -101,6 +101,10 @@ const communityLinks = {
       name: 'Berglinde Newsletter',
       url: 'https://news.berglinde.com/'
     }
+    {
+      name: 'Bitpartikel Blog',
+      url: 'https://bitpartikel.com/cryptonite/'
+    }
   ],
   'Education': [
     {
