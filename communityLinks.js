@@ -161,10 +161,20 @@ const communityLinks = {
     {
       name: 'Bittr',
       url: 'https://getbittr.com/'
-    },
+    }
+  ],
+  'Shops': [
     {
       name: 'Dezentralshop 🛒',
       url: 'https://dezentralshop.ch'
+    },
+    {
+      name: 'SHOPINBIT 🛒',
+      url: 'https://shopinbit.ch/'
+    },
+    {
+      name: 'Funtoshi ♟️',
+      url: 'https://funtoshi.com/'
     }
   ]
 };

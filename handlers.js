@@ -26,7 +26,12 @@ import {
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
 import cooldown from './cooldown.js';
-import ethereumTriggerWords from './pocketEthereum.js';
+import {
+    ethereumTriggerWords,
+    ethereumResponses,
+    shitcoinTriggerWords,
+    shitCoinResponses
+} from './shitcoinLists.js';
 
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -101,7 +106,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
                 const eventNaddr = nip19.naddrEncode({
                     kind: publishedEvent.kind,
                     pubkey: publishedEvent.pubkey,
-                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?.[1] || '',
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
                 });
                 const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
 
@@ -133,7 +138,7 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
     return allEvents.map(calendar => ({
         ...calendar,
         events: calendar.events.filter(event => {
-            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
+            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
             switch (timeFrame) {
                 case 'today':
                     return eventDate >= today && eventDate <= endOfDay;
@@ -152,7 +157,9 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     const chatId = msg.chat.id;
     console.log('Fetching calendar events...');
     try {
-        await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', { disable_notification: true });
+        await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', {
+            disable_notification: true
+        });
         let allEvents = [];
 
         // Log NADDRs being processed
@@ -170,13 +177,17 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         if (allEvents.length === 0) {
-            await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.', { disable_notification: true });
+            await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.', {
+                disable_notification: true
+            });
             return;
         }
 
         const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
         if (filteredEvents.every(cal => cal.events.length === 0)) {
-            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, { disable_notification: true });
+            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
+                disable_notification: true
+            });
             return;
         }
 
@@ -199,7 +210,9 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', { disable_notification: true });
+        await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', {
+            disable_notification: true
+        });
     }
 };
 
@@ -235,10 +248,14 @@ const handleRefreshCommands = async (bot, msg) => {
     const chatId = msg.chat.id;
     try {
         await setupCommands(bot);
-        bot.sendMessage(chatId, 'Befehle wurden erfolgreich aktualisiert!', { disable_notification: true });
+        bot.sendMessage(chatId, 'Befehle wurden erfolgreich aktualisiert!', {
+            disable_notification: true
+        });
     } catch (error) {
         console.error('Error refreshing commands:', error);
-        bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.', { disable_notification: true });
+        bot.sendMessage(chatId, 'Bei der Aktualisierung der Befehle ist ein Fehler aufgetreten. Bitte versuche es später erneut.', {
+            disable_notification: true
+        });
     }
 };
 
@@ -252,7 +269,9 @@ const handleDeleteEventRequest = (bot, msg) => {
     userStates[chatId] = {
         step: 'awaiting_event_id_for_deletion'
     };
-    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:", { disable_notification: true });
+    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:", {
+        disable_notification: true
+    });
 };
 
 const sendDeletionRequestForApproval = (bot, userChatId, eventToDelete) => {
@@ -269,13 +288,13 @@ Möchten Sie dieses Event löschen?
     const keyboard = {
         inline_keyboard: [
             [{
-                text: 'Genehmigen',
-                callback_data: `approve_delete_${userChatId}`
-            },
-            {
-                text: 'Ablehnen',
-                callback_data: `reject_delete_${userChatId}`
-            }
+                    text: 'Genehmigen',
+                    callback_data: `approve_delete_${userChatId}`
+                },
+                {
+                    text: 'Ablehnen',
+                    callback_data: `reject_delete_${userChatId}`
+                }
             ]
         ]
     };
@@ -283,7 +302,9 @@ Möchten Sie dieses Event löschen?
     bot.sendMessage(adminChatId, message, {
         reply_markup: JSON.stringify(keyboard)
     });
-    bot.sendMessage(userChatId, 'Ihre Löschungsanfrage wurde zur Genehmigung an die Administratoren gesendet. Wir werden Sie benachrichtigen, sobald eine Entscheidung getroffen wurde.', { disable_notification: true });
+    bot.sendMessage(userChatId, 'Ihre Löschungsanfrage wurde zur Genehmigung an die Administratoren gesendet. Wir werden Sie benachrichtigen, sobald eine Entscheidung getroffen wurde.', {
+        disable_notification: true
+    });
 };
 
 const handleDeletionInput = async (bot, msg) => {
@@ -296,7 +317,9 @@ const handleDeletionInput = async (bot, msg) => {
 
     if (text.toLowerCase() === '/cancel') {
         delete userStates[chatId];
-        bot.sendMessage(chatId, "Löschungsvorgang abgebrochen.", { disable_notification: true });
+        bot.sendMessage(chatId, "Löschungsvorgang abgebrochen.", {
+            disable_notification: true
+        });
         return;
     }
 
@@ -318,19 +341,25 @@ const handleDeletionInput = async (bot, msg) => {
         }
     } catch (error) {
         console.error('Fehler beim Dekodieren von NADDR:', error);
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", { disable_notification: true });
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {
+            disable_notification: true
+        });
         return;
     }
 
     if (!filter) {
-        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", { disable_notification: true });
+        bot.sendMessage(chatId, "Ungültige Event-ID oder NADDR. Bitte versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {
+            disable_notification: true
+        });
         return;
     }
 
     console.log('Fetching event with filter:', filter);
     const event = await fetchEventDirectly(filter);
     if (!event) {
-        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", { disable_notification: true });
+        bot.sendMessage(chatId, "Event nicht gefunden. Bitte überprüfen Sie die ID und versuchen Sie es erneut oder geben Sie /cancel ein, um abzubrechen.", {
+            disable_notification: true
+        });
         return;
     }
 
@@ -378,10 +407,23 @@ const handleMessage = (bot, msg) => {
             handleEventCreationStep(bot, msg);
         }
     } else {
-        // Check for Ethereum trigger words in group chats
+        // Check for trigger words in group chats
         const text = msg.text.toLowerCase();
+
+        console.log("triggerword: ", text);
+        
+        // Check for Ethereum trigger words
         if (ethereumTriggerWords.some(word => text.includes(word))) {
-            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit <a href='https://pocketethereum.com'>pocketethereum.com</a>";
+            const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
+            bot.sendMessage(msg.chat.id, response, {
+                parse_mode: 'HTML',
+                disable_notification: true
+            });
+        }
+        
+        // Check for other shitcoin trigger words
+        else if (shitcoinTriggerWords.some(word => text.includes(word))) {
+            const response = shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
             bot.sendMessage(msg.chat.id, response, {
                 parse_mode: 'HTML',
                 disable_notification: true
@@ -447,20 +489,28 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
             sendEventForApproval(bot, chatId, userStates[chatId]);
             delete userStates[chatId];
         } else {
-            bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", { disable_notification: true });
+            bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {
+                disable_notification: true
+            });
         }
     } else if (action === 'cancel_creation') {
         handleCancellation(bot, chatId);
-        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Meetup-Erstellung abgebrochen' });
+        await bot.answerCallbackQuery(callbackQuery.id, {
+            text: 'Meetup-Erstellung abgebrochen'
+        });
         await bot.deleteMessage(chatId, msg.message_id);
     } else if (action === 'confirm_location') {
         const locationData = userStates[chatId].tempLocation.data;
         userStates[chatId].location = locationData.display_name;
         userStates[chatId].step = 'description';
-        bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+        bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', {
+            disable_notification: true
+        });
     } else if (action === 'retry_location') {
         userStates[chatId].step = 'location';
-        bot.sendMessage(chatId, 'Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+        bot.sendMessage(chatId, 'Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.', {
+            disable_notification: true
+        });
     }
 };
 
