@@ -13,7 +13,7 @@ const communityLinks = {
       url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh'
     }
   ],
-  'Meetup Gruppen': [
+  'Regionale Gruppen': [
     {
       name: 'Bitcoin Luzern',
       url: 'https://t.me/bitcoinluzern'
@@ -27,9 +27,8 @@ const communityLinks = {
       url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
     },
     {
-      name: 'Bitcoin Block Infokanal',
-      url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
-    }
+      name: "Bitcoin Alps",
+      url: "https://t.me/bitcoin_alps"
   ],
   'Info Gruppen': [
     {
