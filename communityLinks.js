@@ -31,12 +31,19 @@ const communityLinks = {
       url: "https://t.me/bitcoin_alps"
     }
   ],
-  'Info Gruppen': [ // maybe rename??
+  'Info Gruppen': [
     {
       name: 'Bitcoin Block Infokanal',
       url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
     },
-    // add lipa
+    {
+      name: 'lipa community DE',
+      url: 'https://t.me/+c7dJ08A7pOA2YWNk'
+    },
+    {
+      name: 'lipa community EN',
+      url: 'https://t.me/+vr5lo1lxJLE4ZTA0'
+    }
   ],
   'Community Links': [
     {
@@ -44,28 +51,30 @@ const communityLinks = {
       url: 'https://dezentralschweiz.ch'
     },
     {
-      name: 'Podcast 🎙',
-      url: 'https://feeds.rssblue.com/dezentralschweiz'
+      name: 'Funtoshi',
+      url: 'https://funtoshi.com'
+    },
+    {
+      name: "#theOrangeVision",
+      url: "https://theorangevision.ch/"
     },
     {
       name: 'Dezentralshop 🛒',
       url: 'https://dezentralshop.ch'
+    }
+  ],
+  'Online Content': [
+    {
+      name: 'Dezentralschweiz Podcast 🎙',
+      url: 'https://feeds.rssblue.com/dezentralschweiz'
     },
     {
       name: 'Bitcoin Reise',
       url: 'https://youtube.com/@bitcoinreise?si=ZQ6GmiUoAXPRw9Cs'
     },
     {
-      name: 'Funtoshi',
-      url: 'https://funtoshi.com'
-    },
-    {
       name: 'Berglinde Newsletter',
       url: 'https://news.berglinde.com/'
-    },
-    {
-      name: "#theOrangeVision",
-      url: "https://theorangevision.ch/"
     }
   ],
   'Education': [
@@ -100,7 +109,7 @@ const communityLinks = {
       url: 'https://www.bitcoinassociation.ch'
     }
   ],
-  'Unternehmen': [
+  'Dienstleister': [
     {
       name: 'Lipa',
       url: 'https://lipa.swiss'
@@ -120,6 +129,10 @@ const communityLinks = {
     {
       name: 'Bittr',
       url: 'https://getbittr.com/'
+    },
+    {
+      name: 'Dezentralshop 🛒',
+      url: 'https://dezentralshop.ch'
     }
   ]
 };
