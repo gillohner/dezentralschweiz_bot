@@ -28,7 +28,6 @@ const setupEventHandlers = (bot) => {
   bot.onText(/\/links/, (msg) => handlers.handleLinks(bot, msg, communityLinks));
   bot.onText(/\/meetup_vorschlagen/, (msg) => handlers.handleMeetupSuggestion(bot, msg));
   bot.onText(/\/meetup_loeschen/, (msg) => handlers.handleMeetupDeletion(bot, msg));
-
   bot.on('message', (msg) => handlers.handleMessage(bot, msg));
   bot.on('callback_query', (callbackQuery) => handlers.handleCallbackQuery(bot, callbackQuery));
   bot.on("polling_error", (error) => console.log("Polling error:", error));

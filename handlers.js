@@ -26,6 +26,7 @@ import {
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
 import cooldown from './cooldown.js';
+import ethereumTriggerWords from './pocketEthereum.js';
 
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -367,13 +368,20 @@ const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
 };
 
 const handleMessage = (bot, msg) => {
-    console.log("message", msg);
     if (msg.chat.type === 'private') {
         const chatId = msg.chat.id;
         if (userStates[chatId]?.step === 'awaiting_event_id_for_deletion') {
             handleDeletionInput(bot, msg);
         } else {
             handleEventCreationStep(bot, msg);
+        }
+    } else {
+        console.log("here")
+        // Check for Ethereum trigger words in group chats
+        const text = msg.text.toLowerCase();
+        if (ethereumTriggerWords.some(word => text.includes(word))) {
+            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit pocketethereum.com (https://pocketethereum.com/de)";
+            bot.sendMessage(msg.chat.id, response, { disable_notification: true });
         }
     }
 };
