@@ -11,9 +11,25 @@ const communityLinks = {
     {
       name: 'Offtopic Gruppe 👀',
       url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh'
+    },
+    {
+      name: 'Dezentralschweiz Backup 🔐 (P2P)',
+      url: '@Nicolas_B58'
     }
-  ],
+    ],
   'Regionale Gruppen': [
+    {
+      name: "Bitcoin Alps",
+      url: "https://t.me/bitcoin_alps"
+    }
+    {
+      name: "Bitcoin Baden",
+      url: "https://bitcoinbaden.ch/"
+    }   
+    {
+      name: "Einundzwanzig Meetup Ostschweiz",
+      url: "https://t.me/+dl7U3c1THKE2ODhk"
+    }
     {
       name: 'Bitcoin Luzern',
       url: 'https://t.me/bitcoinluzern'
@@ -27,8 +43,20 @@ const communityLinks = {
       url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
     },
     {
-      name: "Bitcoin Alps",
-      url: "https://t.me/bitcoin_alps"
+      name: "	Einezwänzg Solothurn",
+      url: "https://t.me/+o2gLvxb2SxFhNTI0"
+      {
+        name: "Einundzwanzig Basel",
+        url: "https://t.me/EinundzwanzigBS"
+      }
+      {
+        name: "Einundzwanzig Thurgau",
+        url: "https://t.me/Einundzwanzig_Thurgau"
+      }
+      {
+        name: "Bitcoin Alps",
+        url: "https://t.me/bitcoin_alps"
+      }
     }
   ],
   'Info Gruppen': [
@@ -55,12 +83,9 @@ const communityLinks = {
       url: 'https://funtoshi.com'
     },
     {
-      name: "#theOrangeVision",
-      url: "https://theorangevision.ch/"
-    },
-    {
-      name: 'Dezentralshop 🛒',
-      url: 'https://dezentralshop.ch'
+      name: 'Bitcoin Chalet in Oberiberg (SZ)',
+      url: 'https://x.com/Bitcoin_Chalet'
+    }
     }
   ],
   'Online Content': [
@@ -93,6 +118,10 @@ const communityLinks = {
     {
       name: "21 Lessons",
       url: "https://21lessons.com/"
+    }
+    {
+      name: "House of Satoshi",
+      url: "https://www.house-of-satoshi.ch/"
     }
   ],
   'Vereine': [
