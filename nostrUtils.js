@@ -204,6 +204,7 @@ const publishEventToNostr = async (eventDetails) => {
 
         const eventId = crypto.randomBytes(16).toString('hex');
         const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
+        const geohash = ngeohash.encode(eventDetails.latitude, eventDetails.longitude);
 
         eventTemplate = {
             kind: 31923, // Time-Based Calendar Event
@@ -216,6 +217,7 @@ const publishEventToNostr = async (eventDetails) => {
                 ['start', startTimestamp.toString()],
                 ['start_tzid', "Europe/Zurich"],
                 ['location', eventDetails.location],
+                ['g', geohash],
                 ['description', eventDetails.description],
                 ['p', calendarPubkey, '', 'host'],
                 ['a', calendarNaddr],

@@ -449,6 +449,14 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         handleCancellation(bot, chatId);
         await bot.answerCallbackQuery(callbackQuery.id, { text: 'Meetup-Erstellung abgebrochen' });
         await bot.deleteMessage(chatId, msg.message_id);
+    } else if (action === 'confirm_location') {
+        const locationData = userStates[chatId].tempLocation.data;
+        userStates[chatId].location = locationData.display_name;
+        userStates[chatId].step = 'description';
+        bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+    } else if (action === 'retry_location') {
+        userStates[chatId].step = 'location';
+        bot.sendMessage(chatId, 'Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
     }
 };
 

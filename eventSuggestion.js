@@ -1,6 +1,5 @@
-import {
-    publishEventToNostr
-} from './nostrUtils.js';
+import fetchLocationData from './nominatim.js'
+
 
 const userStates = {};
 
@@ -14,7 +13,7 @@ const startEventSuggestion = (bot, chatId, msg) => {
     bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:\n\nDu kannst den Vorgang jederzeit mit /cancel abbrechen.', { disable_notification: true });
 };
 
-const handleEventCreationStep = (bot, msg) => {
+const handleEventCreationStep = async (bot, msg) => {
     const chatId = msg.chat.id;
     if (!userStates[chatId]) return;
 
@@ -52,9 +51,26 @@ const handleEventCreationStep = (bot, msg) => {
             bot.sendMessage(chatId, 'Wo findet das Event statt?\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
             break;
         case 'location':
-            userStates[chatId].location = text;
-            userStates[chatId].step = 'description';
-            bot.sendMessage(chatId, 'Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+            const locationData = await fetchLocationData(text);
+            if (locationData) {
+                userStates[chatId].tempLocation = {
+                    input: text,
+                    data: locationData
+                };
+                const confirmationMessage = `Ich habe folgende Location gefunden:\n${locationData.display_name}\n\nIst das korrekt?`;
+                const keyboard = {
+                    inline_keyboard: [
+                        [{ text: 'Ja, das ist korrekt', callback_data: 'confirm_location' }],
+                        [{ text: 'Nein, erneut eingeben', callback_data: 'retry_location' }]
+                    ]
+                };
+                bot.sendMessage(chatId, confirmationMessage, {
+                    reply_markup: JSON.stringify(keyboard),
+                    disable_notification: true
+                });
+            } else {
+                bot.sendMessage(chatId, 'Ich konnte keine passende Location finden. Bitte versuche es erneut oder gib eine genauere Beschreibung ein:\n\nOder tippe /cancel um abzubrechen.', { disable_notification: true });
+            }
             break;
         case 'description':
             userStates[chatId].description = text;
@@ -148,6 +164,7 @@ Titel: ${eventDetails.title}
 Datum: ${eventDetails.date}
 Zeit: ${eventDetails.time}
 Ort: ${eventDetails.location}
+Koordinaten: ${eventDetails.tempLocation.data.lat}, ${eventDetails.tempLocation.data.lon}
 Beschreibung: ${eventDetails.description}
 `;
 
