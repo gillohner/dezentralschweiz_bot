@@ -31,11 +31,12 @@ const communityLinks = {
       url: "https://t.me/bitcoin_alps"
     }
   ],
-  'Info Gruppen': [
+  'Info Gruppen': [ // maybe rename??
     {
       name: 'Bitcoin Block Infokanal',
       url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
-    }
+    },
+    // add lipa
   ],
   'Community Links': [
     {
