@@ -376,12 +376,14 @@ const handleMessage = (bot, msg) => {
             handleEventCreationStep(bot, msg);
         }
     } else {
-        console.log("here")
         // Check for Ethereum trigger words in group chats
         const text = msg.text.toLowerCase();
         if (ethereumTriggerWords.some(word => text.includes(word))) {
-            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit pocketethereum.com";
-            bot.sendMessage(msg.chat.id, response, { disable_notification: true });
+            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit <a href='https://pocketethereum.com'>pocketethereum.com</a>";
+            bot.sendMessage(msg.chat.id, response, {
+                parse_mode: 'HTML',
+                disable_notification: true
+            });
         }
     }
 };
