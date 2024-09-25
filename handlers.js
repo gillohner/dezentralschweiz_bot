@@ -380,7 +380,7 @@ const handleMessage = (bot, msg) => {
         // Check for Ethereum trigger words in group chats
         const text = msg.text.toLowerCase();
         if (ethereumTriggerWords.some(word => text.includes(word))) {
-            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit pocketethereum.com (https://pocketethereum.com/de)";
+            const response = "Du hast dich wohl im Chat geirrt... aber wenn Ethereum, dann wenigstens mit pocketethereum.com";
             bot.sendMessage(msg.chat.id, response, { disable_notification: true });
         }
     }
