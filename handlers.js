@@ -419,9 +419,17 @@ const handleMessage = (bot, msg) => {
             });
         }
 
+        let matchedShitcoin = '';
+        const isShitcoin = shitcoinTriggerWords.some(word => {
+            const match = new RegExp(`\\b${word}\\b`).test(text);
+            if (match) {
+                matchedShitcoin = word;
+            }
+            return match;
+        });
         // Check for other shitcoin trigger words
-        else if (shitcoinTriggerWords.some(word => new RegExp(`\\b${word}\\b`).test(text))) {
-            const response = shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
+        if (isShitcoin) {
+            const response = matchedShitcoin + "?\n\n" + shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
             bot.sendMessage(msg.chat.id, response, {
                 parse_mode: 'HTML',
                 disable_notification: true
