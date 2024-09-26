@@ -44,7 +44,7 @@ const communityLinks = {
     },
     {
       name: "	Einezwänzg Solothurn",
-      url: "https://t.me/+o2gLvxb2SxFhNTI0"
+      url: "https://t.me/+BPb0b8yHLbM4NTY5"
     },
     {
       name: "Einundzwanzig Basel",
