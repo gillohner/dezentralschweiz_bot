@@ -19,7 +19,8 @@ Benutze /links um verschiedene Gruppen und andere Community-Ressourcen zu finden
     title: "Bitcoin Luzern",
     welcomeMessage: `<b>Willkommen in der Bitcoin Luzern Gruppe!</b>
 
-Hier dreht sich alles um Bitcoin und Wirtschaft.
+Es würde uns interessieren, wer du bist und woher in der Region du kommst. 
+Erzähl doch etwas von Dir.
 
 Benutze /meetups für Informationen über bevorstehende Treffen und /links um verschiedene Gruppen und andere Community-Ressourcen zu finden.`
   },
