@@ -96,9 +96,14 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
         if (isApproved) {
-            console.log('no yet extracted:', callbackQuery.message.text)
-            const eventDetails = extractEventDetails(callbackQuery.message.text);
-            console.log('Extracted event details:', eventDetails);
+            console.log(userStates, userChatId);
+            const eventDetails = userStates[userChatId].pendingEvent;
+            if (!eventDetails) {
+                console.error('No pending event found for user', userChatId);
+                bot.sendMessage(userChatId, 'Es gab einen Fehler bei der Verarbeitung deines Events. Bitte versuche es erneut.');
+                return;
+            }
+
             try {
                 const publishedEvent = await publishEventToNostr(eventDetails);
                 console.log('Event published to Nostr:', publishedEvent);
@@ -118,6 +123,8 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         } else {
             bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
         }
+
+            delete userStates[userChatId].pendingEvent;
 
         bot.answerCallbackQuery(callbackQuery.id, {
             text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
@@ -156,10 +163,21 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
 const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     const chatId = msg.chat.id;
     console.log('Fetching calendar events...');
+
     try {
-        await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', {
+        // Delete the previous message if it exists
+        if (userStates[chatId]?.lastMeetupMessageId) {
+            try {
+                await bot.deleteMessage(chatId, userStates[chatId].lastMeetupMessageId);
+            } catch (error) {
+                console.error('Error deleting previous message:', error);
+            }
+        }
+
+        const loadingMessage = await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', {
             disable_notification: true
         });
+
         let allEvents = [];
 
         // Log NADDRs being processed
@@ -177,42 +195,71 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         if (allEvents.length === 0) {
-            await bot.sendMessage(chatId, 'Keine Kalender oder Meetups gefunden.', {
+            const sentMessage = await bot.editMessageText('Keine Kalender oder Meetups gefunden.', {
+                chat_id: chatId,
+                message_id: loadingMessage.message_id,
                 disable_notification: true
             });
+            userStates[chatId] = {
+                ...userStates[chatId],
+                lastMeetupMessageId: sentMessage.message_id
+            };
             return;
         }
 
         const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
         if (filteredEvents.every(cal => cal.events.length === 0)) {
-            await bot.sendMessage(chatId, `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
+            const sentMessage = await bot.editMessageText(`Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
+                chat_id: chatId,
+                message_id: loadingMessage.message_id,
                 disable_notification: true
             });
+            userStates[chatId] = {
+                ...userStates[chatId],
+                lastMeetupMessageId: sentMessage.message_id
+            };
             return;
         }
 
         const message = await formatMeetupsMessage(filteredEvents);
         if (message.length > 4096) {
+            await bot.deleteMessage(chatId, loadingMessage.message_id);
             const chunks = message.match(/.{1,4096}/gs);
             for (const chunk of chunks) {
-                await bot.sendMessage(chatId, chunk, {
+                const sentMessage = await bot.sendMessage(chatId, chunk, {
                     parse_mode: 'HTML',
                     disable_web_page_preview: true,
                     disable_notification: true
                 });
+                // Store the last message ID
+                userStates[chatId] = {
+                    ...userStates[chatId],
+                    lastMeetupMessageId: sentMessage.message_id
+                };
             }
         } else {
-            await bot.sendMessage(chatId, message, {
+            const sentMessage = await bot.editMessageText(message, {
+                chat_id: chatId,
+                message_id: loadingMessage.message_id,
                 parse_mode: 'HTML',
                 disable_web_page_preview: true,
                 disable_notification: true,
             });
+            // Store the message ID
+            userStates[chatId] = {
+                ...userStates[chatId],
+                lastMeetupMessageId: sentMessage.message_id
+            };
         }
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', {
+        const errorMessage = await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', {
             disable_notification: true
         });
+        userStates[chatId] = {
+            ...userStates[chatId],
+            lastMeetupMessageId: errorMessage.message_id
+        };
     }
 };
 
@@ -238,6 +285,22 @@ const handleMeetups = async (bot, msg) => {
             }]
         ]
     };
+
+    // Delete the previous message if it exists
+    if (msg.message_id) {
+        try {
+            await bot.deleteMessage(chatId, msg.message_id);
+        } catch (error) {
+            console.error('Error deleting previous message:', error);
+        }
+    }
+
+    // Store the message ID for future deletion
+    userStates[chatId] = {
+        ...userStates[chatId],
+        lastMeetupMessageId: sentMessage.message_id
+    };
+
     await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
         reply_markup: JSON.stringify(keyboard),
         disable_notification: true
@@ -409,7 +472,7 @@ const handleMessage = (bot, msg) => {
     } else {
         // Check for trigger words in group chats
         const text = msg.text.toLowerCase();
-        
+
         // Check for Ethereum trigger words
         if (ethereumTriggerWords.some(word => text.includes(word))) {
             const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
@@ -463,6 +526,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         if (!cooldown.isOnCooldown(chatId, category)) {
             const links = communityLinks[category];
             let message = `${category}:\n\n`;
+
             links.forEach(link => {
                 message += `${link.name}\n${link.url}\n\n`;
             });
@@ -493,7 +557,6 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
     } else if (action === 'send_for_approval') {
         if (userStates[chatId]) {
             sendEventForApproval(bot, chatId, userStates[chatId]);
-            delete userStates[chatId];
         } else {
             bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {
                 disable_notification: true
@@ -563,7 +626,9 @@ const handleGetGroupId = async (bot, msg) => {
         const message = `Group ID: ${groupId}\nGroup Name: ${groupName}`;
 
         // Send to admin chat
-        await bot.sendMessage(config.ADMIN_CHAT_ID, message);
+        await bot.sendMessage(config.ADMIN_CHAT_ID, message, {
+            disable_notification: true
+        });
 
         // Optionally, delete the command message to keep it hidden
         await bot.deleteMessage(msg.chat.id, msg.message_id);

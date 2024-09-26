@@ -226,6 +226,8 @@ const publishEventToNostr = async (eventDetails) => {
             ],
         };
 
+        console.log("eventTemplate: ", eventTemplate)
+
         if (eventDetails.end_date && eventDetails.end_time) {
             const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
             eventTemplate.tags.push(['end', endTimestamp.toString()]);
