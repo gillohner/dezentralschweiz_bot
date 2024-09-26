@@ -558,7 +558,7 @@ const handleMessage = (bot, msg) => {
         });
         // Check for other shitcoin trigger words
         if (isShitcoin) {
-            const response = matchedShitcoin + "?\n\n" + shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
+            const response = matchedShitcoin.toUpperCase() + "?!\n\n" + shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
             bot.sendMessage(msg.chat.id, response, {
                 parse_mode: 'HTML',
                 disable_notification: true
