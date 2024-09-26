@@ -1,5 +1,6 @@
 import WebSocket from 'ws';
 import crypto from 'crypto';
+import ngeohash from 'ngeohash';
 import {
     getPublicKey,
     finalizeEvent
