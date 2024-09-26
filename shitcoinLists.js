@@ -17,11 +17,25 @@ const ethereumResponses = [
 ];
 
 const shitcoinTriggerWords = [
-    "binance", "solana", "xrp", "ripple", "cardano",
+    "binance", "solana", "ripple", "cardano",
     "dogecoin", "doge", "polkadot", "chainlink", "litecoin",
     "bitcoin cash", "bcash", "bitcoin sv",
-    "wrapped bitcoin", "wrapped ethereum", "nft", "web3", "smart contract", "dapp", "defi"
-];
+    "wrapped bitcoin", "wrapped ethereum", "nft", "web3", "smart contract", "dapp", "defi",
+    "tether", "uniswap", "avalanche", "polygon", "stellar",
+    "monero", "tron", "cosmos", "algorand", "vechain",
+    "filecoin", "theta", "aave", "elrond", "maker",
+    "zcash", "decentraland", "sushiswap", "pancakeswap", "shiba inu",
+    "safemoon", "bitconnect", "onecoin", "bitclub", "plustoken",
+    "yield farming", "liquidity mining", "staking", "tokenomics", "airdrops",
+    "metaverse", "gamefi", "play-to-earn", "initial coin offering", "token sale",
+    "blockchain gaming", "crypto lending", "yield optimization", "synthetic assets", "oracle",
+    "governance token", "interoperability", "cross-chain",
+    "meme coin", "privacy coin", "utility token", "security token",
+    "yield aggregator", "liquidity pool", "automated market maker",
+    "tokenization", "blockchain explorer", "hard fork", "soft fork", "mainnet",
+    "testnet", "proof-of-stake", "proof-of-work", "delegated proof-of-stake", "sharding",
+    "consensus mechanism", "validator", "gas fees", "transaction fees"
+]
 
 const shitCoinResponses = [
     "Das hat nichts mit Bitcoin zu tun... zurück zur Schule!",
