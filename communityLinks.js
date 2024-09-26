@@ -48,7 +48,7 @@ const communityLinks = {
     },
     {
       name: "Einundzwanzig Basel",
-      url: "https://t.me/EinundzwanzigBS"
+      url: "https://t.me/EinundzwanzigBS (outdated link)"
     },
     {
       name: "Einundzwanzig Thurgau",
