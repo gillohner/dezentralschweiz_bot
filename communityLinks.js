@@ -14,7 +14,7 @@ const communityLinks = {
     },
     {
       name: 'Dezentralschweiz Backup 🔐 (P2P)',
-      url: '@Nicolas_B58'
+      url: 'Download Keet.io and DM @Nicolas_B58'
     }
   ],
   'Regionale Gruppen': [
