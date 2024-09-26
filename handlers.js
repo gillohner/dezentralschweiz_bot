@@ -600,7 +600,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         } else {
             const category = action.split('_')[1];
             const links = communityLinks[category];
-            let message = `${category}:\n\n`;
+            let message = `<b>${category}:\n\n</b>`;
             links.forEach(link => {
                 message += `${link.name}\n${link.url}\n\n`;
             });
