@@ -34,7 +34,7 @@ const shitcoinTriggerWords = [
     "yield aggregator", "liquidity pool", "automated market maker",
     "tokenization", "blockchain explorer", "hard fork", "soft fork", "mainnet",
     "testnet", "proof-of-stake", "delegated proof-of-stake", "sharding",
-    "consensus mechanism", "validator", "gas fees", "transaction fees"
+    "consensus mechanism", "validator", "gas fees", "transaction fees", "xrp", "bsv"
 ]
 
 const shitCoinResponses = [
