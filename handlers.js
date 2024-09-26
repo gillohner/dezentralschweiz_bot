@@ -420,7 +420,7 @@ const handleMessage = (bot, msg) => {
         }
 
         // Check for other shitcoin trigger words
-        else if (shitcoinTriggerWords.some(word => text.includes(word))) {
+        else if (shitcoinTriggerWords.some(word => new RegExp(`\\b${word}\\b`).test(text))) {
             const response = shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
             bot.sendMessage(msg.chat.id, response, {
                 parse_mode: 'HTML',

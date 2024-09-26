@@ -20,7 +20,7 @@ const shitcoinTriggerWords = [
     "binance", "solana", "ripple", "cardano",
     "dogecoin", "doge", "polkadot", "chainlink", "litecoin",
     "bitcoin cash", "bcash", "bitcoin sv",
-    "wrapped bitcoin", "wrapped ethereum", "nft", "web3", "smart contract", "dapp", "defi",
+    "wrapped bitcoin", "wrapped ethereum", "nft", "nfts", "web3", "smart contract", "dapp", "defi",
     "tether", "uniswap", "avalanche", "polygon", "stellar",
     "monero", "tron", "cosmos", "algorand", "vechain",
     "filecoin", "theta", "aave", "elrond", "maker",
