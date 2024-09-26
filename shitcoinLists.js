@@ -23,7 +23,7 @@ const shitcoinTriggerWords = [
     "wrapped bitcoin", "wrapped ethereum", "nft", "nfts", "web3", "smart contract", "dapp", "defi",
     "tether", "uniswap", "avalanche", "polygon", "stellar",
     "monero", "tron", "cosmos", "algorand", "vechain",
-    "filecoin", "theta", "aave", "elrond", "maker",
+    "filecoin", "theta", "aave", "elrond",
     "zcash", "decentraland", "sushiswap", "pancakeswap", "shiba inu",
     "safemoon", "bitconnect", "onecoin", "bitclub", "plustoken",
     "yield farming", "liquidity mining", "staking", "tokenomics", "airdrops",
@@ -32,9 +32,8 @@ const shitcoinTriggerWords = [
     "governance token", "interoperability", "cross-chain",
     "meme coin", "privacy coin", "utility token", "security token",
     "yield aggregator", "liquidity pool", "automated market maker",
-    "tokenization", "blockchain explorer", "hard fork", "soft fork", "mainnet",
-    "testnet", "proof-of-stake", "delegated proof-of-stake", "sharding",
-    "consensus mechanism", "validator", "gas fees", "transaction fees", "xrp", "bsv"
+    "tokenization", "proof-of-stake", "delegated proof-of-stake",
+    "validator", "gas fees", "transaction fees", "xrp", "bsv"
 ]
 
 const shitCoinResponses = [
