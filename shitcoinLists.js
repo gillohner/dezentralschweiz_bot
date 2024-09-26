@@ -19,11 +19,10 @@ const ethereumResponses = [
 ];
 
 const shitcoinTriggerWords = [
-    "binance coin", "bnb", "solana", "sol", "xrp", "ripple", "cardano", "ada",
-    "dogecoin", "doge", "polkadot", "dot", "chainlink", "link", "litecoin", "ltc",
-    "bitcoin cash", "bcash", "bch", "bitcoin sv", "bsv",
-    "wrapped bitcoin", "wbtc", "wrapped ethereum", "weth",
-    "blockchain", "nft", "web3", "smart contract", "dapp", "defi", "dao", "dlt"
+    "binance", "solana", "xrp", "ripple", "cardano",
+    "dogecoin", "doge", "polkadot", "chainlink", "litecoin",
+    "bitcoin cash", "bcash", "bitcoin sv",
+    "wrapped bitcoin", "wrapped ethereum", "nft", "web3", "smart contract", "dapp", "defi"
 ];
 
 const shitCoinResponses = [
