@@ -1,9 +1,7 @@
 const ethereumTriggerWords = [
-    "ethereum", "eth", "ether", "vitalik", "buterin", "evm", "gwei", "solidity", "vyper", "ethash",
-    "dao", "the dao", "parity", "myetherwallet", "infura", "etherscan", "prysm", "geth", "openethereum",
-    "erc-20", "erc-721", "erc-1155", "ens", "plasma", "raiden", "zkrollup",
-    "optimistic rollup", "eth2", "ethereum 2.0", "proof of stake", "validator", "staking", "slashing", "attestation", "epoch",
-    "finality", "crosslink", "ethash",
+    "ethereum", "ether", "vitalik", "buterin", "evm", "gwei", "solidity", "vyper", "ethash",
+    "dao", "the dao", "parity", "myetherwallet", "infura", "etherscan", "prysm", "openethereum",
+    "erc-20", "erc-721", "erc-1155", "zkrollup",
     "etherium", "ethirium", "ithirium", "ethreum", "etherum", "etherium", "etheruem"
 ];
 
@@ -21,41 +19,11 @@ const ethereumResponses = [
 ];
 
 const shitcoinTriggerWords = [
-    "binance coin", "bnb", "solana", "sol", "xrp", "ripple", "cardano", "ada", "casper", "serenity", "beacon chain",
-    "dogecoin", "doge", "doges", "polygon", "matic", "polkadot", "dot",
-    "chainlink", "link", "litecoin", "ltc", "lites", "avalanche", "avax",
-    "uniswap", "uni", "stellar", "xlm", "lumens", "monero", "xmr", "cosmos", "atom",
-    "algorand", "algo", "vechain", "vet", "filecoin", "fil", "internet computer", "icp",
-    "dfinity", "tezos", "xtz", "eos", "aave", "the graph", "grt", "decentraland", "mana", "nethermind", "besu", "erigon",
-    "shiba inu", "shib", "shiba", "web3", "nft", "blockchain", "dlt", "defi", "dao",
-    "dapp", "smart contract", "token", "altcoin", "memecoin", "ico", "yield farming",
-    "liquidity pool", "dex", "cex", "wallet", "gas fee", "interoperability", "consensus",
-    "proof of stake", "forks", "airdrops", "metaverse", "gamefi", "play-to-earn", "metamask",
-    "tokenomics", "whitepaper", "hodl", "fud", "fomo", "pump and dump", "rug pull",
-    "to the moon", "diamond hands", "paper hands",
-    "bitcoin cash", "bcash", "bch", "bitcoin sv", "bsv", "tron", "trx", "neo",
-    "iota", "miota", "dash", "zcash", "zec", "maker", "mkr", "kusama", "ksm",
-    "theta", "theta", "elrond", "egld", "hedera", "hbar", "waves", "nano",
-    "omg network", "omg", "ontology", "ont", "qtum", "qtum", "zilliqa", "zil",
-    "icon", "icx", "stacks", "stx", "horizen", "zen", "siacoin", "sc",
-    "basic attention token", "bat", "0x", "zrx", "enjin coin", "enj",
-    "loopring", "lrc", "curve dao token", "crv", "synthetix", "snx",
-    "compound", "comp", "yearn.finance", "yfi", "sushiswap", "sushi",
-    "pancakeswap", "cake", "chiliz", "chz", "flow", "flow", "holo", "hot",
-    "fantom", "ftm", "harmony", "one", "nem", "xem", "decred", "dcr",
-    "digibyte", "dgb", "ravencoin", "rvn", "arweave", "ar", "ankr", "ankr",
-    "storj", "storj", "fetch.ai", "fet", "origin protocol", "ogn",
-    "celo", "celo", "nervos network", "ckb", "amp", "amp", "reef", "reef",
-    "wazirx", "wrx", "verge", "xvg", "golem", "glm", "augur", "rep",
-    "status", "snt", "civic", "cvc", "bancor", "bnt", "kava", "kava",
-    "orbs", "orbs", "cartesi", "ctsi", "ardor", "ardr", "wanchain", "wan",
-    "mina", "mina", "perpetual protocol", "perp", "injective protocol", "inj",
-    "moonbeam", "glmr", "oasis network", "rose", "secret", "scrt",
-    "kadena", "kda", "gala", "gala", "render token", "rndr", "audius", "audio",
-    "voyager token", "vgx", "ergo", "erg", "telcoin", "tel", "conflux", "cfx",
-    "wrapped bitcoin", "wbtc", "wrapped ethereum", "weth", "pepe", "pepe",
-    "floki inu", "floki", "safemoon", "safemoon", "bonk", "bonk", "aptos", "apt",
-    "optimism", "op", "arbitrum", "arb", "worldcoin", "wld", "deposit contract", "shard chain"
+    "binance coin", "bnb", "solana", "sol", "xrp", "ripple", "cardano", "ada",
+    "dogecoin", "doge", "polkadot", "dot", "chainlink", "link", "litecoin", "ltc",
+    "bitcoin cash", "bcash", "bch", "bitcoin sv", "bsv",
+    "wrapped bitcoin", "wbtc", "wrapped ethereum", "weth",
+    "blockchain", "nft", "web3", "smart contract", "dapp", "defi", "dao", "dlt"
 ];
 
 const shitCoinResponses = [
