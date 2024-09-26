@@ -32,6 +32,7 @@ import {
     shitcoinTriggerWords,
     shitCoinResponses
 } from './shitcoinLists.js';
+import telegramGroups from './telegramGroups.js';
 
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -537,7 +538,7 @@ const handleMessage = (bot, msg) => {
         }
     } else {
         // Check for trigger words in group chats
-        const text = msg.text.toLowerCase();
+        const text = msg.text ? msg.text.toLowerCase() : "";
 
         // Check for Ethereum trigger words
         if (ethereumTriggerWords.some(word => text.includes(word))) {
@@ -768,6 +769,21 @@ const handleGetGroupId = async (bot, msg) => {
     }
 };
 
+const handleNewMember = async (bot, msg) => {
+    const chatId = msg.chat.id;
+    const newMember = msg.new_chat_member;
+    const groupInfo = telegramGroups[chatId.toString()];
+
+    if (groupInfo) {
+        const username = newMember.username ? `@${newMember.username}` : newMember.first_name;
+        const welcomeMessage = `Hallo ${username}!\n\n${groupInfo.welcomeMessage}`;
+        await bot.sendMessage(chatId, welcomeMessage, {
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
+        });
+    }
+};
+
 export {
     handleStart,
     handleMeetups,
@@ -784,5 +800,6 @@ export {
     handleLinks,
     handleMeetupSuggestion,
     handleMeetupDeletion,
-    handleGetGroupId
+    handleGetGroupId,
+    handleNewMember
 };

@@ -32,6 +32,7 @@ const setupEventHandlers = (bot) => {
   bot.on('message', (msg) => handlers.handleMessage(bot, msg));
   bot.on('callback_query', (callbackQuery) => handlers.handleCallbackQuery(bot, callbackQuery));
   bot.on("polling_error", (error) => console.log("Polling error:", error));
+  bot.on('new_chat_members', (msg) => handlers.handleNewMember(bot, msg));
 };
 
 const main = async () => {
