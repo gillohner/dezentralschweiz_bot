@@ -23,10 +23,6 @@ Meetup Gruppe: schweiz.einundzwanzig.space
   '-1001759384231': [
     title: "Dezentralschweiz - Bitcoin 💬",
     welcomeMessage: "hallo"
-  ],
-  '-1001759384231': [
-    title: "Dezentralschweiz - Offtopic 👀",
-    welcomeMessage: "hallo"
   ]
 };
 

@@ -124,7 +124,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
             bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
         }
 
-            delete userStates[userChatId].pendingEvent;
+        delete userStates[userChatId].pendingEvent;
 
         bot.answerCallbackQuery(callbackQuery.id, {
             text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
@@ -171,10 +171,19 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 await bot.deleteMessage(chatId, userStates[chatId].lastMeetupMessageId);
             } catch (error) {
                 console.error('Error deleting previous message:', error);
+                // Don't throw an error, just log it and continue
             }
         }
 
-        const loadingMessage = await bot.sendMessage(chatId, 'Hole bevorstehende Meetups, bitte warten...', {
+        // Delete the selection message
+        try {
+            await bot.deleteMessage(chatId, msg.message_id);
+        } catch (error) {
+            console.error('Error deleting selection message:', error);
+            // Don't throw an error, just log it and continue
+        }
+
+        const loadingMessage = await bot.sendMessage(chatId, 'Mining new Meetups, bitte warten...', {
             disable_notification: true
         });
 
@@ -221,7 +230,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             return;
         }
 
-        const message = await formatMeetupsMessage(filteredEvents);
+        const message = await formatMeetupsMessage(filteredEvents, timeFrame);
         if (message.length > 4096) {
             await bot.deleteMessage(chatId, loadingMessage.message_id);
             const chunks = message.match(/.{1,4096}/gs);
@@ -286,25 +295,44 @@ const handleMeetups = async (bot, msg) => {
         ]
     };
 
-    // Delete the previous message if it exists
-    if (msg.message_id) {
+    // Delete the user's /meetup command message
+    try {
+        await bot.deleteMessage(chatId, msg.message_id);
+    } catch (error) {
+        console.error('Error deleting user command message:', error);
+    }
+
+    // Delete the previous meetup message if it exists
+    if (userStates[chatId]?.lastMeetupMessageId) {
         try {
-            await bot.deleteMessage(chatId, msg.message_id);
+            await bot.deleteMessage(chatId, userStates[chatId].lastMeetupMessageId);
         } catch (error) {
-            console.error('Error deleting previous message:', error);
+            console.error('Error deleting previous meetup message:', error);
         }
     }
 
-    // Store the message ID for future deletion
+    // Send new message and store its ID
+    const sentMessage = await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
+        reply_markup: JSON.stringify(keyboard),
+        disable_notification: true
+    });
+
+    // Update the stored message ID with the new meetup list message
     userStates[chatId] = {
         ...userStates[chatId],
         lastMeetupMessageId: sentMessage.message_id
     };
 
-    await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
-        reply_markup: JSON.stringify(keyboard),
-        disable_notification: true
-    });
+    // Set a timer to delete the message after 5 minutes
+    setTimeout(async () => {
+        try {
+            await bot.deleteMessage(chatId, sentMessage.message_id);
+            delete userStates[chatId].lastMeetupMessageId;
+        } catch (error) {
+            console.error('Error deleting meetup list message:', error);
+        }
+    }, 5 * 60 * 1000);
+
 };
 
 const handleRefreshCommands = async (bot, msg) => {

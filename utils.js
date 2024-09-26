@@ -13,8 +13,23 @@ const escapeHTML = (text) => {
     .replace(/"/g, '&quot;');
 };
 
-const formatMeetupsMessage = async (allEvents) => {
-  let message = '<b>🗓 Bevorstehende Meetups</b>\n\n';
+const formatMeetupsMessage = async (allEvents, timeFrame) => {
+  let headerMessage;
+  switch (timeFrame) {
+    case 'today':
+      headerMessage = '🗓 Meetups heute';
+      break;
+    case 'week':
+      headerMessage = '🗓 Meetups diese Woche';
+      break;
+    case 'month':
+      headerMessage = '🗓 Meetups diesen Monat';
+      break;
+    default:
+      headerMessage = '🗓 Alle bevorstehenden Meetups';
+  }
+
+  let message = `<b>${headerMessage}</b>\n\n`;
 
   for (const {
       calendarName,
