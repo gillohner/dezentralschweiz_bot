@@ -1,6 +1,5 @@
 const ethereumTriggerWords = [
-    "ethereum", "ether", "vitalik", "buterin", "evm", "gwei", "solidity", "vyper", "ethash",
-    "dao", "zkrollup", "etherium", "ethirium", "ithirium", "ethreum", "etherum", "etherium", "etheruem"
+    "ethereum", "ether", "vitalik", "buterin", "solidity", "etherium", "ethirium", "ithirium", "ethreum", "etherum", "etherium", "etheruem"
 ];
 
 const ethereumResponses = [

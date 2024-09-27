@@ -112,7 +112,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
                 const eventNaddr = nip19.naddrEncode({
                     kind: publishedEvent.kind,
                     pubkey: publishedEvent.pubkey,
-                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?.[1] || '',
                 });
                 const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
 
@@ -146,7 +146,7 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
     return allEvents.map(calendar => ({
         ...calendar,
         events: calendar.events.filter(event => {
-            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
+            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
             switch (timeFrame) {
                 case 'today':
                     return eventDate >= today && eventDate <= endOfDay;
@@ -418,13 +418,13 @@ Möchten Sie dieses Event löschen?
     const keyboard = {
         inline_keyboard: [
             [{
-                    text: 'Genehmigen',
-                    callback_data: `approve_delete_${userChatId}`
-                },
-                {
-                    text: 'Ablehnen',
-                    callback_data: `reject_delete_${userChatId}`
-                }
+                text: 'Genehmigen',
+                callback_data: `approve_delete_${userChatId}`
+            },
+            {
+                text: 'Ablehnen',
+                callback_data: `reject_delete_${userChatId}`
+            }
             ]
         ]
     };
@@ -540,8 +540,17 @@ const handleMessage = (bot, msg) => {
         // Check for trigger words in group chats
         const text = msg.text ? msg.text.toLowerCase() : "";
 
+        let matchedEthereum = '';
+        const isEthereum = ethereumTriggerWords.some(word => {
+            const match = new RegExp(`\\b${word}\\b`).test(text);
+            if (match) {
+                matchedEthereum = word;
+            }
+            return match;
+        });
+
         // Check for Ethereum trigger words
-        if (ethereumTriggerWords.some(word => text.includes(word))) {
+        if (isEthereum) {
             const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
             bot.sendMessage(msg.chat.id, response, {
                 parse_mode: 'HTML',
@@ -557,6 +566,7 @@ const handleMessage = (bot, msg) => {
             }
             return match;
         });
+
         // Check for other shitcoin trigger words
         if (isShitcoin) {
             const response = matchedShitcoin.toUpperCase() + "?!\n\n" + shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
