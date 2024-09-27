@@ -6,7 +6,7 @@ const communityLinks = {
     },
     {
       name: 'Meetup Gruppe 🍻',
-      url: 'https://schweiz.einundzwanzig.space'
+      url: 'https://t.me/+XEWwvUPaxPBlZjM0'
     },
     {
       name: 'Offtopic Gruppe 👀',
