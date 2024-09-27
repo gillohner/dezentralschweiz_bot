@@ -232,37 +232,11 @@ Beschreibung: ${eventDetails.description}
     });
 };
 
-const extractEventDetails = (messageText) => {
-    const lines = messageText.split('\n');
-    const details = {};
-    let currentField = null;
-
-    lines.forEach(line => {
-        if (line.includes(': ')) {
-            const [key, value] = line.split(': ');
-            currentField = key.toLowerCase();
-            details[currentField] = value;
-        } else if (currentField && line.trim()) {
-            details[currentField] += '\n' + line.trim();
-        }
-    });
-
-    // Extract latitude and longitude from coordinates
-    if (details.koordinaten) {
-        const [latitude, longitude] = details.koordinaten.split(', ').map(Number);
-        details.latitude = latitude;
-        details.longitude = longitude;
-    }
-
-    return details;
-};
-
 export {
     startEventSuggestion,
     handleEventCreationStep,
     handleOptionalField,
     sendEventForApproval,
-    extractEventDetails,
     handleCancellation,
     userStates
 };

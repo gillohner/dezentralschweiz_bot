@@ -20,7 +20,6 @@ import {
     handleEventCreationStep,
     handleOptionalField,
     sendEventForApproval,
-    extractEventDetails,
     handleCancellation,
     userStates
 } from './eventSuggestion.js';
