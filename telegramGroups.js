@@ -33,6 +33,16 @@ In dieser Gruppe soll es sich rund um das Thema Bitcoin und Wirtschaft drehen. G
 Wir führen des Weiteren noch eine Meetup, sowie eine Offtopic Gruppe.
 
 Benutze /links um verschiedene Gruppen und andere Community-Ressourcen zu finden.`
+  },
+  '-1001284407897': {
+    title: "Dezentralschweiz - Meetups 🍻",
+    welcomeMessage: `<b>Willkommen in der Dezentralschweiz Meetup Gruppe! 🍻</b>
+
+In dieser Gruppe sollte sich alles um Meetups drehen. Nutze /meetups um die anstehenden Meetups zu sehen.
+
+Wir führen des Weiteren noch eine Bitcoin, sowie eine Offtopic Gruppe.
+
+Benutze /links um verschiedene Gruppen und andere Community-Ressourcen zu finden.`
   }
 };
 
