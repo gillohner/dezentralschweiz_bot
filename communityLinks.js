@@ -55,8 +55,8 @@ const communityLinks = {
       url: "https://t.me/Einundzwanzig_Thurgau"
     },
     {
-      name: "Bitcoin Alps",
-      url: "https://t.me/bitcoin_alps"
+      name: "Bitcoin Weesen SG",
+      url: "https://www.bitcoinweesen.ch"
     }
   ],
   'Info Gruppen': [
