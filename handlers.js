@@ -111,7 +111,7 @@ const handleAdminApproval = async (bot, callbackQuery) => {
                 const eventNaddr = nip19.naddrEncode({
                     kind: publishedEvent.kind,
                     pubkey: publishedEvent.pubkey,
-                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?.[1] || '',
+                    identifier: publishedEvent.tags.find(t => t[0] === 'd')?. [1] || '',
                 });
                 const flockstrLink = `https://www.flockstr.com/event/${eventNaddr}`;
 
@@ -140,12 +140,14 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
     endOfDay.setHours(23, 59, 59, 999);
     const endOfWeek = new Date(today);
     endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    endOfWeek.setHours(23, 59, 59, 999);
+    const endOfMonth = new Date(today.getTime() + 31 * 24 * 60 * 60 * 1000);
+    endOfMonth.setHours(23, 59, 59, 999);
 
     return allEvents.map(calendar => ({
         ...calendar,
         events: calendar.events.filter(event => {
-            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000);
+            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
             switch (timeFrame) {
                 case 'today':
                     return eventDate >= today && eventDate <= endOfDay;
@@ -154,7 +156,7 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
                 case 'month':
                     return eventDate >= today && eventDate <= endOfMonth;
                 default:
-                    return true; // 'all' case
+                    return eventDate >= today;
             }
         })
     }));
@@ -162,7 +164,6 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
 
 const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     const chatId = msg.chat.id;
-    console.log('Fetching calendar events...');
 
     try {
         // Delete the previous message if it exists
@@ -290,7 +291,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
 
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        const errorMessage = await bot.sendMessage(chatId, 'Ein Fehler ist beim Holen der Meetups aufgetreten. Bitte versuche es später erneut.', {
+        const errorMessage = await bot.sendMessage(chatId, 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.', {
             disable_notification: true
         });
         userStates[chatId] = {
@@ -370,7 +371,6 @@ const handleMeetups = async (bot, msg) => {
             console.error('Error deleting meetup list message:', error);
         }
     }, 5 * 60 * 1000);
-
 };
 
 const handleRefreshCommands = async (bot, msg) => {
@@ -417,13 +417,13 @@ Möchten Sie dieses Event löschen?
     const keyboard = {
         inline_keyboard: [
             [{
-                text: 'Genehmigen',
-                callback_data: `approve_delete_${userChatId}`
-            },
-            {
-                text: 'Ablehnen',
-                callback_data: `reject_delete_${userChatId}`
-            }
+                    text: 'Genehmigen',
+                    callback_data: `approve_delete_${userChatId}`
+                },
+                {
+                    text: 'Ablehnen',
+                    callback_data: `reject_delete_${userChatId}`
+                }
             ]
         ]
     };
