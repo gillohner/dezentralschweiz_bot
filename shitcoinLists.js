@@ -32,7 +32,7 @@ const shitcoinTriggerWords = [
     "meme coin", "privacy coin", "utility token", "security token",
     "yield aggregator", "liquidity pool", "automated market maker",
     "tokenization", "proof-of-stake", "delegated proof-of-stake",
-    "validator", "gas fees", "transaction fees", "xrp", "bsv", "bch"
+    "validator", "gas fees", "transaction fees", "xrp", "bsv", "bch", "iso20022",
 ]
 
 const shitCoinResponses = [
