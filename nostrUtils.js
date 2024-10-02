@@ -205,7 +205,7 @@ const publishEventToNostr = async (eventDetails) => {
 
         const eventId = crypto.randomBytes(16).toString('hex');
         const startTimestamp = Math.floor(new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000);
-        const geohash = ngeohash.encode(eventDetails.latitude, eventDetails.longitude);
+        const geohash = ngeohash.encode(eventDetails.latitude, eventDetails.longitude); //TODO fix geohash by setting at fetch
 
         eventTemplate = {
             kind: 31923, // Time-Based Calendar Event
@@ -223,10 +223,11 @@ const publishEventToNostr = async (eventDetails) => {
                 ['p', calendarPubkey, '', 'host'],
                 ['a', calendarNaddr],
                 ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
+                ['r', eventDetails.gmaps_link],
+                ['r', eventDetails.osm_link],
+                ['r', "https://t.me/g1ll0hn3r"], //TODO: add user
             ],
         };
-
-        console.log("eventTemplate: ", eventTemplate)
 
         if (eventDetails.end_date && eventDetails.end_time) {
             const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);

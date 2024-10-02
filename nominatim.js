@@ -12,4 +12,6 @@ const fetchLocationData = async (query) => {
     }
 };
 
-export default fetchLocationData;
+export {
+    fetchLocationData
+};

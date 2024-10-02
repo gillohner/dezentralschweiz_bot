@@ -4,80 +4,71 @@ import {
 import {
   checkForDeletionEvent
 } from './nostrUtils.js';
+import ngeohash from 'ngeohash';
+import {
+  extractTelegramUsername,
+  formatLocation,
+  formatDate,
+  escapeHTML
+} from './helpers.js'
 
-const escapeHTML = (text) => {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+const getHeaderMessage = (timeFrame) => {
+  switch (timeFrame) {
+    case 'today':
+      return 'Meetups heute';
+    case 'week':
+      return 'Meetups diese Woche';
+    case 'month':
+      return 'Meetups diesen Monat';
+    default:
+      return 'Alle bevorstehenden Meetups';
+  }
 };
 
 const formatMeetupsMessage = async (allEvents, timeFrame) => {
-  let headerMessage;
-  switch (timeFrame) {
-    case 'today':
-      headerMessage = '🗓 Meetups heute';
-      break;
-    case 'week':
-      headerMessage = '🗓 Meetups diese Woche';
-      break;
-    case 'month':
-      headerMessage = '🗓 Meetups diesen Monat';
-      break;
-    default:
-      headerMessage = '🗓 Alle bevorstehenden Meetups';
-  }
+  let message = `🍻 <b>${getHeaderMessage(timeFrame)}</b>\n\n`;
 
-  let message = `<b>${headerMessage}</b>\n\n`;
-
-  for (const {
-      calendarName,
-      events,
-      naddr
-    } of allEvents) {
+  for (const { calendarName, events, naddr } of allEvents) {
     if (events.length > 0) {
       const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
       message += `<b>📅 <a href="${calendarUrl}">${escapeHTML(calendarName)}</a></b>\n\n`;
 
-      const uniqueEvents = events.reduce((acc, event) => {
-        const eventId = event.id;
-        if (!acc.some(e => e.id === eventId)) {
-          acc.push(event);
-        }
-        return acc;
-      }, []);
+      for (const event of events) {
+        if (await checkForDeletionEvent(event.id)) continue;
 
-      uniqueEvents.sort((a, b) => {
-        const aStart = parseInt(a.tags.find(t => t[0] === 'start')?. [1] || '0');
-        const bStart = parseInt(b.tags.find(t => t[0] === 'start')?. [1] || '0');
-        return aStart - bStart;
-      });
+        const title = event.tags.find(t => t[0] === 'name')?.[1] || event.tags.find(t => t[0] === 'title')?.[1];
+        if (!title) continue;
 
-      for (const event of uniqueEvents) {
-        // Check for deletion event
-        const isDeleted = await checkForDeletionEvent(event.id);
-        if (isDeleted) {
-          console.log(`Event ${event.id} has been deleted. Skipping.`);
-          continue; // Skip this event if it has been deleted
-        }
+        const start = event.tags.find(t => t[0] === 'start')?.[1];
+        if (!start) continue;
 
-        const title = escapeHTML(event.tags.find(t => t[0] === 'name')?. [1] || event.tags.find(t => t[0] === 'title')?. [1] || 'Unbenanntes Meetup');
-        const start = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
-        const location = escapeHTML(event.tags.find(t => t[0] === 'location')?. [1] || 'Kein Ort angegeben');
+        const locationTag = event.tags.find(t => t[0] === 'location');
+        const location = locationTag ? locationTag[1] : null;
+
         const eventNaddr = nip19.naddrEncode({
           kind: event.kind,
           pubkey: event.pubkey,
-          identifier: event.tags.find(t => t[0] === 'd')?. [1] || '',
+          identifier: event.tags.find(t => t[0] === 'd')?.[1] || '',
         });
         const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
 
-        message += `<b>   🎉 <a href="${eventUrl}">${title}</a></b>\n`;
-        message += `   🕒 <i>Datum:</i> ${start.toLocaleString('de-CH')}\n`;
-        message += `   📍 <i>Ort:</i> ${location}\n\n`;
-      }
+        message += `🎉 <b><a href="${eventUrl}">${escapeHTML(title)}</a></b>\n`;
+        if (start) message += `🕒 ${formatDate(parseInt(start) * 1000)}\n`;
 
-      message += '\n';
+        if (location) {
+          const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?.[1];
+          const osmLink = event.tags.find(t => t[0] === 'r' && t[1].includes('openstreetmap.org'))?.[1];
+          message += formatLocation(location, googleMapsLink, osmLink);
+        }
+        
+        // Handle Telegram link
+        const telegramLink = event.tags.find(t => t[0] === 'r' && t[1].includes('t.me'));
+        if (telegramLink && false) { //TODO: tg organ implement
+          message += `👤 <b>Organisator:</b> <a href="${telegramLink[1]}">DM</a>\n`;
+        }
+
+        message += '\n';
+      }
     }
   }
 
