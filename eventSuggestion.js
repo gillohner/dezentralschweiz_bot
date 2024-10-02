@@ -1,4 +1,6 @@
-import fetchLocationData from './nominatim.js'
+import {
+    fetchLocationData
+} from './nominatim.js'
 
 
 const userStates = {};
@@ -185,7 +187,6 @@ const handleOptionalField = (bot, chatId, field) => {
 };
 
 const sendEventForApproval = (bot, userChatId, eventDetails) => {
-    console.log(userStates, userChatId);
     userStates[userChatId].pendingEvent = eventDetails;
     const adminChatId = process.env.ADMIN_CHAT_ID;
     const userInfo = userStates[userChatId];

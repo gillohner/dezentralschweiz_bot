@@ -96,7 +96,6 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
         if (isApproved) {
-            console.log(userStates, userChatId);
             const eventDetails = userStates[userChatId].pendingEvent;
             if (!eventDetails) {
                 console.error('No pending event found for user', userChatId);
@@ -712,7 +711,15 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         });
         await bot.deleteMessage(chatId, msg.message_id);
     } else if (action === 'confirm_location') {
+        console.log("local: ", userStates[chatId].tempLocation.data);
         const locationData = userStates[chatId].tempLocation.data;
+        const lat = locationData.lat;
+        const lon = locationData.lon;
+        const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+        const osmLink = "https://www.openstreetmap.org/" + locationData.osm_type + "/" + locationData.osm_id;
+
+        userStates[chatId].osm_link = osmLink;
+        userStates[chatId].gmaps_link = googleMapsLink;
         userStates[chatId].location = locationData.display_name;
         userStates[chatId].step = 'description';
         bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', {
