@@ -291,7 +291,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                 // Handle Telegram link
                 const telegramUser = extractTelegramUsername(event.tags);
                 if (telegramUser) {
-                    message += `👤 <b>Organisator:</b> ${telegramUser}\n`;
+                    message += `👤 ${telegramUser}\n`;
                 }
 
                 if (location) {
