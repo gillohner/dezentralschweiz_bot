@@ -1,9 +1,7 @@
 import {
     fetchLocationData
 } from './nominatim.js'
-
-
-const userStates = {};
+import userStates from './userStates.js';
 
 const startEventSuggestion = (bot, chatId, msg) => {
     userStates[chatId] = {
