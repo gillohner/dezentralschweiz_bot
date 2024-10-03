@@ -225,7 +225,7 @@ const publishEventToNostr = async (eventDetails) => {
                 ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
                 ['r', eventDetails.gmaps_link],
                 ['r', eventDetails.osm_link],
-                ['r', "https://t.me/g1ll0hn3r"], //TODO: add user
+                ['r', eventDetails.tg_user_link],
             ],
         };
 

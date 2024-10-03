@@ -54,6 +54,13 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 
         message += `🎉 <b><a href="${eventUrl}">${escapeHTML(title)}</a></b>\n`;
         if (start) message += `🕒 ${formatDate(parseInt(start) * 1000)}\n`;
+        
+        // Handle Telegram link
+        const telegramUser = extractTelegramUsername(event.tags);
+
+        if (telegramUser) {
+          message += `👤 <b>Organisator:</b> ${telegramUser}\n`;
+        }
 
         if (location) {
           const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?.[1];
@@ -61,12 +68,6 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
           message += formatLocation(location, googleMapsLink, osmLink);
         }
         
-        // Handle Telegram link
-        const telegramLink = event.tags.find(t => t[0] === 'r' && t[1].includes('t.me'));
-        if (telegramLink && false) { //TODO: tg organ implement
-          message += `👤 <b>Organisator:</b> <a href="${telegramLink[1]}">DM</a>\n`;
-        }
-
         message += '\n';
       }
     }
