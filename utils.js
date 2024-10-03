@@ -42,6 +42,8 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
         const start = event.tags.find(t => t[0] === 'start')?.[1];
         if (!start) continue;
 
+        const end = event.tags.find(t => t[0] === 'end')?.[1];
+
         const locationTag = event.tags.find(t => t[0] === 'location');
         const location = locationTag ? locationTag[1] : null;
 
@@ -53,11 +55,14 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
         const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
 
         message += `🎉 <b><a href="${eventUrl}">${escapeHTML(title)}</a></b>\n`;
-        if (start) message += `🕒 ${formatDate(parseInt(start) * 1000)}\n`;
-        
+        if (start) {
+           message += `🕒 ${formatDate(parseInt(start) * 1000)}`;
+           if (end) message+= ` - ${formatDate(parseInt(end) * 1000)}`;
+           message += `\n`;
+        }
+
         // Handle Telegram link
         const telegramUser = extractTelegramUsername(event.tags);
-
         if (telegramUser) {
           message += `👤 <b>Organisator:</b> ${telegramUser}\n`;
         }
