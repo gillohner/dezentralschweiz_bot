@@ -2,10 +2,10 @@ import WebSocket from 'ws';
 import crypto from 'crypto';
 import ngeohash from 'ngeohash';
 import {
-    getPublicKey,
     finalizeEvent
 } from 'nostr-tools/pure';
 import {
+    getPublicKey,
     nip19
 } from 'nostr-tools';
 import config from './config.js';
@@ -25,10 +25,8 @@ const getEventHash = (event) => {
 };
 
 const fetchEventDirectly = async (filter) => {
-    console.log('Using decoded filter:', filter);
 
     try {
-        console.log(`Fetching from relay: ${config.FETCH_RELAY}`);
         const event = await new Promise((resolve, reject) => {
             const ws = new WebSocket(config.FETCH_RELAY);
             const timeout = setTimeout(() => {
@@ -37,10 +35,8 @@ const fetchEventDirectly = async (filter) => {
             }, 10000);
 
             ws.on('open', () => {
-                console.log(`Connected to relay: ${config.FETCH_RELAY}`);
                 const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
                 ws.send(subscriptionMessage);
-                console.log(`Sent subscription message: ${subscriptionMessage}`);
             });
 
             ws.on('message', (data) => {
@@ -64,11 +60,10 @@ const fetchEventDirectly = async (filter) => {
         });
 
         if (event) {
-            console.log(`Event found on relay ${config.FETCH_RELAY}:`, event);
+
             // Check for deletion events
             const deletionEvent = await checkForDeletionEvent(event.id);
             if (deletionEvent) {
-                console.log(`Event ${event.id} has been deleted. Deletion event:`, deletionEvent);
                 return null;
             }
             return event;
@@ -77,7 +72,6 @@ const fetchEventDirectly = async (filter) => {
         console.error(`Error fetching event from relay ${config.FETCH_RELAY}:`, error);
     }
 
-    console.log('No event found on the fetch relay');
     return null;
 };
 
@@ -89,10 +83,8 @@ export const checkForDeletionEvent = async (eventId) => {
     };
 
     try {
-        console.log(`Checking for deletion event on relay: ${config.FETCH_RELAY}`);
         const deletionEvent = await fetchEventDirectly(deletionFilter);
         if (deletionEvent) {
-            console.log(`Deletion event found for ${eventId} on relay ${config.FETCH_RELAY}`);
             return true; // Deletion event found
         }
     } catch (error) {
@@ -182,22 +174,24 @@ const fetchEvents = async (eventReferences) => {
 const publishEventToNostr = async (eventDetails) => {
     console.log('Publishing event to Nostr:', eventDetails);
 
-    const privateKey = process.env.BOT_NSEC;
+    const privateKey = config.BOT_NSEC;
     if (!privateKey) {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
 
     const publicKey = getPublicKey(privateKey);
+
     let eventTemplate;
 
     if (eventDetails.kind === 5) {
         eventTemplate = eventDetails;
     } else {
         // Creation event (kind 31923)
-        const calendarNaddr = process.env.EVENT_CALENDAR_NADDR;
+        const calendarNaddr = config.EVENT_CALENDAR_NADDR;
         if (!calendarNaddr) {
             throw new Error('EVENT_CALENDAR_NADDR is not set in the environment variables');
         }
+
 
         const decoded = nip19.decode(calendarNaddr);
         const calendarPubkey = decoded.data.pubkey;
@@ -223,11 +217,12 @@ const publishEventToNostr = async (eventDetails) => {
                 ['p', calendarPubkey, '', 'host'],
                 ['a', calendarNaddr],
                 ['calendar', `31924:${calendarPubkey}:${calendarIdentifier}`],
-                ['r', eventDetails.gmaps_link],
-                ['r', eventDetails.osm_link],
-                ['r', eventDetails.tg_user_link],
             ],
         };
+
+        if (eventDetails.gmaps_link) eventTemplate.tags.push(['r', eventDetails.gmaps_link]);
+        if (eventDetails.osm_link) eventTemplate.tags.push(['r', eventDetails.osm_link]);
+        if (eventDetails.tg_user_link) eventTemplate.tags.push(['r', eventDetails.tg_user_link]);
 
         if (eventDetails.end_date && eventDetails.end_time) {
             const endTimestamp = Math.floor(new Date(`${eventDetails.end_date}T${eventDetails.end_time}`).getTime() / 1000);
@@ -245,7 +240,6 @@ const publishEventToNostr = async (eventDetails) => {
 
     for (const relay of config.DEFAULT_RELAYS) {
         try {
-            console.log(`Publishing event to relay: ${relay}`);
             await publishToRelay(relay, signedEvent);
         } catch (error) {
             console.error(`Error publishing event to relay ${relay}:`, error);
@@ -265,7 +259,6 @@ const publishToRelay = (relay, event) => {
         const ws = new WebSocket(relay);
         ws.on('open', () => {
             ws.send(JSON.stringify(['EVENT', event]));
-            console.log(`Event sent to relay: ${relay}`);
             ws.close();
             resolve();
         });
@@ -277,7 +270,7 @@ const publishToRelay = (relay, event) => {
 };
 
 const updateCalendarEvent = async (newEvent, privateKey) => {
-    const calendarId = process.env.EVENT_CALENDAR_NADDR;
+    const calendarId = config.EVENT_CALENDAR_NADDR;
     if (!calendarId) {
         console.error('EVENT_CALENDAR_NADDR is not set in environment variables');
         return;
