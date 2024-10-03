@@ -3,7 +3,6 @@ import config from './config.js';
 import {
   setupCommands
 } from './commands.js';
-import * as handlers from './handlers.js';
 import communityLinks from './communityLinks.js';
 import * as eventSuggestion from './eventSuggestion.js';
 import {

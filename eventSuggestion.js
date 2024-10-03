@@ -184,7 +184,16 @@ const handleOptionalField = (bot, chatId, field) => {
     }
 };
 
-const sendEventForApproval = (bot, userChatId, eventDetails) => {
+const sendEventForApproval = (bot, callbackQuery, userChatId) => {
+    const msg = callbackQuery.message;
+    const eventDetails = userStates[userChatId];
+
+    if (!eventDetails) {
+        bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {
+            disable_notification: true
+        });
+    }
+
     userStates[userChatId].pendingEvent = eventDetails;
     const adminChatId = process.env.ADMIN_CHAT_ID;
     const userInfo = userStates[userChatId];
@@ -213,11 +222,11 @@ Beschreibung: ${eventDetails.description}
         inline_keyboard: [
             [{
                     text: 'Genehmigen',
-                    callback_data: `approve_${userChatId}`
+                    callback_data: `approve_meetup_${userChatId}`
                 },
                 {
                     text: 'Ablehnen',
-                    callback_data: `reject_${userChatId}`
+                    callback_data: `reject_meetup_${userChatId}`
                 }
             ]
         ]
@@ -231,11 +240,41 @@ Beschreibung: ${eventDetails.description}
     });
 };
 
+const handleConfirmLocation = (bot, callbackQuery) => {
+    const msg = callbackQuery.message;
+    const chatId = msg.chat.id;
+
+    const locationData = userStates[chatId].tempLocation.data;
+    const lat = locationData.lat;
+    const lon = locationData.lon;
+    const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    const osmLink = "https://www.openstreetmap.org/" + locationData.osm_type + "/" + locationData.osm_id;
+
+    userStates[chatId].osm_link = osmLink;
+    userStates[chatId].gmaps_link = googleMapsLink;
+    userStates[chatId].location = locationData.display_name;
+    userStates[chatId].step = 'description';
+    bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', {
+        disable_notification: true
+    });
+}
+
+const handleRetryLocation = (bot, callbackQuery) => {
+    const msg = callbackQuery.message;
+    const chatId = msg.chat.id;
+
+    userStates[chatId].step = 'location';
+    bot.sendMessage(chatId, 'Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.', {
+        disable_notification: true
+    });
+}
+
 export {
     startEventSuggestion,
     handleEventCreationStep,
     handleOptionalField,
     sendEventForApproval,
     handleCancellation,
-    userStates
+    handleConfirmLocation,
+    handleRetryLocation,
 };
