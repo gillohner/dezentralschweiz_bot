@@ -1,5 +1,4 @@
 import {
-    fetchCalendarEvents,
     fetchEventDirectly,
     publishEventToNostr
 } from './nostrUtils.js';
@@ -8,52 +7,8 @@ import {
     nip19,
     getPublicKey
 } from 'nostr-tools';
-import {
-    startEventSuggestion,
-    handleEventCreationStep,
-    handleOptionalField,
-    sendEventForApproval,
-    handleCancellation,
-} from './eventSuggestion.js';
-import communityLinks from './communityLinks.js';
-import {
-    ethereumTriggerWords,
-    ethereumResponses,
-    shitcoinTriggerWords,
-    shitCoinResponses
-} from './shitcoinLists.js';
-import telegramGroups from './telegramGroups.js';
 
 import userStates from './userStates.js';
-
-const handleStart = async (bot, msg) => {
-    const chatId = msg.chat.id;
-    const message = `
-<b>Willkommen beim Dezentralschweiz Bot! 🇨🇭</b>
-
-Hier sind die wichtigsten Befehle:
-
-/meetups - Zeige bevorstehende Meetups
-<i>Erhalte eine Liste aller anstehenden Veranstaltungen in der Dezentralschweiz Community.</i>
-
-/links - Zeige Community-Links
-<i>Entdecke wichtige Links und Ressourcen unserer Community.</i>
-
-/meetup_vorschlagen - Schlage ein neues Event vor
-<i>Möchtest du ein Meetup organisieren? Nutze diesen Befehl, um ein Nostr-Event vorzuschlagen. (DM only)</i>
-
-/meetup_loeschen - Schlage ein neues Event vor
-<i>Hast du beim erstellen eines Meetups einen Fehler gemacht oder das Meetup wurde abgesagt? Nutze diesen Befehl um ein Nostr Delete-Event abzusenden. (DM only)</i>
-
-Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir gerne zur Verfügung.
-
-<blockquote>Made with ❤️ by @g1ll0hn3r</blockquote>
-`;
-    await bot.sendMessage(chatId, message, {
-        parse_mode: 'HTML',
-        disable_notification: true
-    });
-};
 
 const handleAdminApproval = async (bot, callbackQuery) => {
     const action = callbackQuery.data;
@@ -121,18 +76,6 @@ const handleAdminApproval = async (bot, callbackQuery) => {
         });
         bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
     }
-};
-
-
-
-const handleDeleteEventRequest = (bot, msg) => {
-    const chatId = msg.chat.id;
-    userStates[chatId] = {
-        step: 'awaiting_event_id_for_deletion'
-    };
-    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:", {
-        disable_notification: true
-    });
 };
 
 const sendDeletionRequestForApproval = (bot, userChatId, eventToDelete) => {
@@ -259,114 +202,9 @@ const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
     }
 };
 
-const handleMessage = (bot, msg) => {
-    if (msg.chat.type === 'private') {
-        const chatId = msg.chat.id;
-        if (userStates[chatId]?.step === 'awaiting_event_id_for_deletion') {
-            handleDeletionInput(bot, msg);
-        } else {
-            handleEventCreationStep(bot, msg);
-        }
-    } else {
-        // Check for trigger words in group chats
-        const text = msg.text ? msg.text.toLowerCase() : "";
-
-        let matchedEthereum = '';
-        const isEthereum = ethereumTriggerWords.some(word => {
-            const match = new RegExp(`\\b${word}\\b`).test(text);
-            if (match) {
-                matchedEthereum = word;
-            }
-            return match;
-        });
-
-        // Check for Ethereum trigger words
-        if (isEthereum) {
-            const response = ethereumResponses[Math.floor(Math.random() * ethereumResponses.length)];
-            bot.sendMessage(msg.chat.id, response, {
-                parse_mode: 'HTML',
-                disable_notification: true
-            });
-        }
-
-        let matchedShitcoin = '';
-        const isShitcoin = shitcoinTriggerWords.some(word => {
-            const match = new RegExp(`\\b${word}\\b`).test(text);
-            if (match) {
-                matchedShitcoin = word;
-            }
-            return match;
-        });
-
-        // Check for other shitcoin trigger words
-        if (isShitcoin) {
-            const response = matchedShitcoin.toUpperCase() + "?!\n\n" + shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
-            bot.sendMessage(msg.chat.id, response, {
-                parse_mode: 'HTML',
-                disable_notification: true
-            });
-        }
-    }
-};
-
-const handleMeetupDeletion = (bot, msg) => {
-    if (msg.chat.type !== 'private') {
-        bot.sendMessage(msg.chat.id, 'Dieser Befehl funktioniert nur in privaten Nachrichten. Bitte sende mir eine direkte Nachricht, um eine Eventlöschung anzufordern.', {
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: 'Zum Bot',
-                        url: `https://t.me/${bot.username}`
-                    }]
-                ]
-            },
-            disable_notification: true
-        });
-        return;
-    }
-    handleDeleteEventRequest(bot, msg);
-};
-
-const handleGetGroupId = async (bot, msg) => {
-    if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
-        const groupId = msg.chat.id;
-        const groupName = msg.chat.title;
-        const message = `Group ID: ${groupId}\nGroup Name: ${groupName}`;
-
-        // Send to admin chat
-        await bot.sendMessage(config.ADMIN_CHAT_ID, message, {
-            disable_notification: true
-        });
-
-        // Optionally, delete the command message to keep it hidden
-        await bot.deleteMessage(msg.chat.id, msg.message_id);
-    }
-};
-
-const handleNewMember = async (bot, msg) => {
-    const chatId = msg.chat.id;
-    const newMember = msg.new_chat_member;
-    const groupInfo = telegramGroups[chatId.toString()];
-
-    if (groupInfo) {
-        const username = newMember.username ? `@${newMember.username}` : newMember.first_name;
-        const welcomeMessage = `Hallo ${username}!\n\n${groupInfo.welcomeMessage}`;
-        await bot.sendMessage(chatId, welcomeMessage, {
-            parse_mode: 'HTML',
-            disable_web_page_preview: true
-        });
-    }
-};
-
 export {
-    handleStart,
-    handleDeleteEventRequest,
     handleDeletionInput,
     handleAdminApproval,
     handleDeletionConfirmation,
     sendDeletionRequestForApproval,
-    handleMessage,
-    handleMeetupDeletion,
-    handleGetGroupId,
-    handleNewMember
 };
