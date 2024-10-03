@@ -1,5 +1,6 @@
 import {
-    getPublicKey
+    getPublicKey,
+    nip19
 } from 'nostr-tools';
 import {
     publishEventToNostr,
