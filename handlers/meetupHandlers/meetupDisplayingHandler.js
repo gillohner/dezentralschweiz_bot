@@ -92,13 +92,6 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             }
         }
 
-        // Delete the selection message
-        try {
-            await bot.deleteMessage(chatId, msg.message_id);
-        } catch (error) {
-            console.error('Error deleting selection message:', error);
-        }
-
         const loadingMessage = await bot.sendMessage(chatId, 'Mining new Meetups, bitte warten...', {
             disable_notification: true
         });

@@ -2,6 +2,13 @@ import {
     startEventSuggestion
 } from '../../eventSuggestion.js';
 import userStates from '../../userStates.js'
+import {
+    publishEventToNostr
+} from '../../nostrUtils.js'
+import {
+    nip19
+} from 'nostr-tools'
+import config from '../../config.js';
 
 const handleMeetupSuggestion = (bot, msg) => {
     if (msg.chat.type !== 'private') {
@@ -27,9 +34,8 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     const userChatId = action.split('_')[2];
     const isApproved = action.startsWith('approve_meetup_');
     console.log(`Event ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
-
     if (isApproved) {
-        const eventDetails = userStates[userChatId].pendingEvent;
+        const eventDetails = userStates[userChatId].event;
         if (!eventDetails) {
             console.error('No pending event found for user', userChatId);
             bot.sendMessage(userChatId, 'Es gab einen Fehler bei der Verarbeitung deines Events. Bitte versuche es erneut.');
@@ -56,12 +62,11 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
         bot.sendMessage(userChatId, 'Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen.');
     }
 
-    delete userStates[userChatId].pendingEvent;
-
     bot.answerCallbackQuery(callbackQuery.id, {
         text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
     });
-    bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
+    console.log(config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
+    bot.deleteMessage(config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
 }
 
 export {

@@ -2,13 +2,15 @@ import {
     fetchLocationData
 } from './nominatim.js'
 import userStates from './userStates.js';
+import config from './config.js';
 
 const startEventSuggestion = (bot, chatId, msg) => {
     userStates[chatId] = {
         step: 'title',
         username: msg.from.username || '',
         firstName: msg.from.first_name || '',
-        lastName: msg.from.last_name || ''
+        lastName: msg.from.last_name || '',
+        event: {}
     };
     bot.sendMessage(chatId, 'Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:\n\nDu kannst den Vorgang jederzeit mit /cancel abbrechen.', {
         disable_notification: true
@@ -30,7 +32,7 @@ const handleEventCreationStep = async (bot, msg) => {
 
     switch (step) {
         case 'title':
-            userStates[chatId].title = text;
+            userStates[chatId].event.title = text;
             userStates[chatId].step = 'date';
             bot.sendMessage(chatId, 'Super! Nun gib bitte das Datum des Events ein (Format: YYYY-MM-DD):\n\nOder tippe /cancel um abzubrechen.', {
                 disable_notification: true
@@ -43,7 +45,7 @@ const handleEventCreationStep = async (bot, msg) => {
                 });
                 return;
             }
-            userStates[chatId].date = text;
+            userStates[chatId].event.date = text;
             userStates[chatId].step = 'time';
             bot.sendMessage(chatId, 'Gib jetzt die Startzeit des Events ein (Format: HH:MM):\n\nOder tippe /cancel um abzubrechen.', {
                 disable_notification: true
@@ -56,7 +58,7 @@ const handleEventCreationStep = async (bot, msg) => {
                 });
                 return;
             }
-            userStates[chatId].time = text;
+            userStates[chatId].event.time = text;
             userStates[chatId].step = 'location';
             bot.sendMessage(chatId, 'Wo findet das Event statt?\n\nOder tippe /cancel um abzubrechen.', {
                 disable_notification: true
@@ -93,7 +95,7 @@ const handleEventCreationStep = async (bot, msg) => {
             }
             break;
         case 'description':
-            userStates[chatId].description = text;
+            userStates[chatId].event.description = text;
             showOptionalFieldsMenu(bot, chatId);
             break;
         case 'end_date':
@@ -186,16 +188,15 @@ const handleOptionalField = (bot, chatId, field) => {
 
 const sendEventForApproval = (bot, callbackQuery, userChatId) => {
     const msg = callbackQuery.message;
-    const eventDetails = userStates[userChatId];
+    const eventDetails = userStates[userChatId].event;
 
     if (!eventDetails) {
-        bot.sendMessage(chatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {
+        bot.sendMessage(userChatId, "Es tut mir leid, aber ich habe keine Informationen über dein Event. Bitte starte den Prozess erneut mit /meetup_vorschlagen.", {
             disable_notification: true
         });
     }
 
-    userStates[userChatId].pendingEvent = eventDetails;
-    const adminChatId = process.env.ADMIN_CHAT_ID;
+    const adminChatId = config.ADMIN_CHAT_ID;
     const userInfo = userStates[userChatId];
     let userIdentifier = userInfo.username ? `@${userInfo.username}` : `${userInfo.firstName} ${userInfo.lastName}`.trim();
     if (!userIdentifier) {
@@ -208,7 +209,6 @@ Titel: ${eventDetails.title}
 Datum: ${eventDetails.date}
 Zeit: ${eventDetails.time}
 Ort: ${eventDetails.location}
-Koordinaten: ${eventDetails.tempLocation.data.lat}, ${eventDetails.tempLocation.data.lon}
 Beschreibung: ${eventDetails.description}
 `;
 
@@ -232,6 +232,8 @@ Beschreibung: ${eventDetails.description}
         ]
     };
 
+    delete userStates[userChatId].step;
+
     bot.sendMessage(adminChatId, message, {
         reply_markup: JSON.stringify(keyboard)
     });
@@ -250,9 +252,9 @@ const handleConfirmLocation = (bot, callbackQuery) => {
     const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
     const osmLink = "https://www.openstreetmap.org/" + locationData.osm_type + "/" + locationData.osm_id;
 
-    userStates[chatId].osm_link = osmLink;
-    userStates[chatId].gmaps_link = googleMapsLink;
-    userStates[chatId].location = locationData.display_name;
+    userStates[chatId].event.osm_link = osmLink;
+    userStates[chatId].event.gmaps_link = googleMapsLink;
+    userStates[chatId].event.location = locationData.display_name;
     userStates[chatId].step = 'description';
     bot.sendMessage(chatId, 'Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.', {
         disable_notification: true

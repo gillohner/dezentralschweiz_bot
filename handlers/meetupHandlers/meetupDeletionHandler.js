@@ -7,6 +7,7 @@ import {
     fetchEventDirectly
 } from '../../nostrUtils.js';
 import userStates from '../../userStates.js'
+import config from '../../config.js';
 
 const handleMeetupDeletion = (bot, msg) => {
     if (msg.chat.type !== 'private') {
@@ -65,7 +66,7 @@ const handleAdminMeetupDeletionApproval = async (bot, callbackQuery) => {
 
 
 const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
-    const privateKey = process.env.BOT_NSEC;
+    const privateKey = config.BOT_NSEC;
     if (!privateKey) {
         throw new Error('BOT_NSEC is not set in the environment variables');
     }
@@ -156,7 +157,7 @@ const handleDeletionInput = async (bot, msg) => {
 };
 
 const sendDeletionRequestForApproval = (bot, userChatId, eventToDelete) => {
-    const adminChatId = process.env.ADMIN_CHAT_ID;
+    const adminChatId = config.ADMIN_CHAT_ID;
     let message = `
 Löschungsanfrage für Event:
 Titel: ${eventToDelete.tags.find(t => t[0] === 'name')?.[1] || 'Ohne Titel'}
