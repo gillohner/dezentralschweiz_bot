@@ -24,7 +24,6 @@ import {
     userStates
 } from './eventSuggestion.js';
 import communityLinks from './communityLinks.js';
-import cooldown from './cooldown.js';
 import {
     ethereumTriggerWords,
     ethereumResponses,
@@ -32,8 +31,6 @@ import {
     shitCoinResponses
 } from './shitcoinLists.js';
 import telegramGroups from './telegramGroups.js';
-
-const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const handleStart = async (bot, msg) => {
     const chatId = msg.chat.id;
