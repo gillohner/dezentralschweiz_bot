@@ -4,7 +4,6 @@ import {
   setupCommands
 } from './commands.js';
 import communityLinks from './communityLinks.js';
-import * as eventSuggestion from './eventSuggestion.js';
 import {
   handleMeetupSuggestion
 } from './handlers/meetupHandlers/meetupSuggestionHandler.js'

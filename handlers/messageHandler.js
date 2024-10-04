@@ -10,7 +10,7 @@ import {
 } from './meetupHandlers/meetupDeletionHandler.js';
 import {
     handleEventCreationStep
-} from '../eventSuggestion.js';
+} from './meetupHandlers/meetupSuggestionHandler.js';
 
 const handleMessage = (bot, msg) => {
     if (msg.chat.type === 'private') {

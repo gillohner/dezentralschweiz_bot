@@ -13,7 +13,7 @@ import {
     handleConfirmLocation,
     handleRetryLocation,
     handleOptionalField,
-} from '../eventSuggestion.js'
+} from './meetupHandlers/meetupSuggestionHandler.js'
 
 const handleCallbackQuery = async (bot, callbackQuery) => {
     const action = callbackQuery.data;
