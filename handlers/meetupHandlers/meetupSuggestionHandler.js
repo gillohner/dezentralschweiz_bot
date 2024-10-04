@@ -1,6 +1,6 @@
 import {
     publishEventToNostr
-} from '../../nostrUtils.js'
+} from '../../utils/nostrUtils.js'
 import {
     nip19
 } from 'nostr-tools'

@@ -8,7 +8,7 @@ import {
     getPublicKey,
     nip19
 } from 'nostr-tools';
-import config from './config.js';
+import config from '../config.js';
 
 const sha256 = (data) => crypto.createHash('sha256').update(data).digest('hex');
 

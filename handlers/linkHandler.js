@@ -1,4 +1,4 @@
-import communityLinks from '../communityLinks.js';
+import communityLinks from '../datasets/communityLinks.js';
 import userStates from '../userStates.js';
 
 const handleLinks = async (bot, msg, communityLinks) => {

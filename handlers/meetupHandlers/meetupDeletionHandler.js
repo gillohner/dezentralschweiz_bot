@@ -5,7 +5,7 @@ import {
 import {
     publishEventToNostr,
     fetchEventDirectly
-} from '../../nostrUtils.js';
+} from '../../utils/nostrUtils.js';
 import userStates from '../../userStates.js'
 import config from '../../config.js';
 

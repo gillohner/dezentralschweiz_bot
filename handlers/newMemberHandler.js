@@ -1,4 +1,4 @@
-import telegramGroups from '../telegramGroups.js';
+import telegramGroups from '../datasets/telegramGroups.js';
 
 const handleNewMember = async (bot, msg) => {
     const chatId = msg.chat.id;

@@ -2,16 +2,16 @@ import userStates from "../../userStates.js";
 import config from '../../config.js';
 import {
     fetchCalendarEvents
-} from '../../nostrUtils.js';
+} from '../../utils/nostrUtils.js';
 import {
     extractTelegramUsername,
     formatLocation,
     formatDate,
     escapeHTML
-} from '../../helpers.js'
+} from '../../utils/helpers.js'
 import {
     checkForDeletionEvent
-} from '../../nostrUtils.js';
+} from '../../utils/nostrUtils.js';
 import {
     nip19
 } from 'nostr-tools';

@@ -3,7 +3,7 @@ import {
     ethereumResponses,
     shitcoinTriggerWords,
     shitCoinResponses
-} from '../shitcoinLists.js';
+} from '../datasets/shitcoinLists.js';
 import userStates from '../userStates.js';
 import {
     handleDeletionInput

@@ -3,7 +3,7 @@ import config from './config.js';
 import {
   setupCommands
 } from './commands.js';
-import communityLinks from './communityLinks.js';
+import communityLinks from './datasets/communityLinks.js';
 import {
   handleMeetupSuggestion
 } from './handlers/meetupHandlers/meetupSuggestionHandler.js'
