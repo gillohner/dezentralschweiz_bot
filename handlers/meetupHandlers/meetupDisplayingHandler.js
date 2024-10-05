@@ -132,7 +132,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             return;
         }
 
-        const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
+        const filteredEvents = sortEventsByStartDate(filterEventsByTimeFrame(allEvents, timeFrame));
 
         if (filteredEvents.every(cal => cal.events.length === 0)) {
             const sentMessage = await bot.editMessageText(`Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
@@ -217,6 +217,17 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             }
         }, 5 * 60 * 1000);
     }
+};
+
+const sortEventsByStartDate = (eventList) => {
+    return eventList.map(calendar => ({
+        ...calendar,
+        events: calendar.events.sort((a, b) => {
+            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000;
+            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000;
+            return aStart - bStart;
+        })
+    }));
 };
 
 const filterEventsByTimeFrame = (allEvents, timeFrame) => {
@@ -326,5 +337,6 @@ export {
     handleMeetupsFilter,
     filterEventsByTimeFrame,
     formatMeetupsMessage,
-    getHeaderMessage
+    getHeaderMessage,
+    sortEventsByStartDate,
 };
