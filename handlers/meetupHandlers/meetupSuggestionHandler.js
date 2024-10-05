@@ -98,7 +98,7 @@ const handleEventCreationStep = async (bot, msg) => {
     switch (step) {
         case 'title':
             const username = msg.chat.username;
-            userStates[chatId].event.tg_user_link = `https://t.me/${username}`
+            userStates[chatId].event.tg_user_link = `https://t.me/${username}`;
 
             userStates[chatId].event.title = text;
             userStates[chatId].step = 'date';
