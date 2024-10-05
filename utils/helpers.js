@@ -35,7 +35,7 @@ const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
       result += `🕵️ <a href="${osmLink}">OpenStreetMap</a>`;
     }
 
-    // AppleMapsLink
+    // AppleMaps Link
     if (appleMapsLink && (googleMapsLink || osmLink)) {
       result += ' | ';
     }
