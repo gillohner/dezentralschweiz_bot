@@ -16,11 +16,11 @@ const commands = [{
     },
     {
         command: 'meetup_vorschlagen',
-        description: 'Schlage ein neues Event vor'
+        description: 'Neues Meetup vorschlagen'
     },
     {
         command: 'meetup_loeschen',
-        description: 'Beantrage die Löschung eines Events'
+        description: 'Beantrage die Löschung eines Meetup'
     }
 ];
 

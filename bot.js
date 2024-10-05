@@ -1,9 +1,9 @@
 import TelegramBot from 'node-telegram-bot-api';
 import config from './config.js';
+import communityLinks from './datasets/communityLinks.js';
 import {
   setupCommands
 } from './commands.js';
-import communityLinks from './datasets/communityLinks.js';
 import {
   handleMeetupSuggestion
 } from './handlers/meetupHandlers/meetupSuggestionHandler.js'
@@ -41,7 +41,6 @@ const initializeBot = async (bot) => {
   try {
     const botInfo = await bot.getMe();
     bot.username = botInfo.username;
-    console.log(`Bot initialized. Username: @${bot.username}`);
   } catch (error) {
     console.error('Error initializing bot:', error);
   }
@@ -61,7 +60,7 @@ const setupEventHandlers = (bot) => {
 };
 
 const main = async () => {
-  console.log('Bot wird gestartet...');
+  console.log('Booting up the Nostr...');
   await setupCommands(bot);
   await initializeBot(bot);
   setupEventHandlers(bot);

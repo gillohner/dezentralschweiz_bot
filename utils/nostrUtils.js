@@ -221,6 +221,7 @@ const publishEventToNostr = async (eventDetails) => {
         };
 
         if (eventDetails.gmaps_link) eventTemplate.tags.push(['r', eventDetails.gmaps_link]);
+        if (eventDetails.applemaps_link) eventTemplate.tags.push(['r', eventDetails.applemaps_link]);
         if (eventDetails.osm_link) eventTemplate.tags.push(['r', eventDetails.osm_link]);
         if (eventDetails.tg_user_link) eventTemplate.tags.push(['r', eventDetails.tg_user_link]);
 
