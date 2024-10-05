@@ -1,15 +1,13 @@
 import userStates from "../../userStates.js";
 import config from '../../config.js';
 import {
-    fetchCalendarEvents
-} from '../../utils/nostrUtils.js';
-import {
     extractTelegramUsername,
     formatLocation,
     formatDate,
     escapeHTML
 } from '../../utils/helpers.js'
 import {
+    fetchCalendarEvents,
     checkForDeletionEvent
 } from '../../utils/nostrUtils.js';
 import {
@@ -223,8 +221,8 @@ const sortEventsByStartDate = (eventList) => {
     return eventList.map(calendar => ({
         ...calendar,
         events: calendar.events.sort((a, b) => {
-            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000;
-            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?.[1] || '0') * 1000;
+            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000;
+            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000;
             return aStart - bStart;
         })
     }));
