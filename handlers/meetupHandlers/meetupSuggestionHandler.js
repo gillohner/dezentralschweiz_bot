@@ -314,7 +314,7 @@ const handleConfirmLocation = (bot, callbackQuery) => {
     const locationData = userStates[chatId].tempLocation.data;
     const lat = locationData.lat;
     const lon = locationData.lon;
-    const locationName = locationData.locationName;
+    const locationName = locationData.name;
     const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}&query_place_id=${locationName}`;
     const osmLink = `https://www.openstreetmap.org/${locationData.osm_type}/${locationData.osm_id}`;
     const appleMapsLink = `http://maps.apple.com/?q=${locationName}&ll=${lat},${lon}`;
