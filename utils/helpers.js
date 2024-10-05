@@ -16,22 +16,33 @@ const extractTelegramUsername = (tags) => {
   return null;
 };
 
-const formatLocation = (location, googleMapsLink, osmLink) => {
+const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
   const suffix = ', Schweiz/Suisse/Svizzera/Svizra';
   let formattedLocation = location.endsWith(suffix) ? location.slice(0, -suffix.length).trim() : location;
 
   let result = `📍 ${escapeHTML(formattedLocation)}\n`;
-  if (googleMapsLink || osmLink) {
+  if (googleMapsLink || osmLink || appleMapsLink) {
     result += '   ';
     if (googleMapsLink) {
       result += `🌍 <a href="${googleMapsLink}">Google Maps</a>`;
     }
-    if (googleMapsLink && osmLink) {
+
+    // OpenStreetMap Link
+    if (osmLink && (googleMapsLink || appleMapsLink)) {
       result += ' | ';
     }
     if (osmLink) {
       result += `🕵️ <a href="${osmLink}">OpenStreetMap</a>`;
     }
+
+    // AppleMapsLink
+    if (appleMapsLink && (googleMapsLink || osmLink)) {
+      result += ' | ';
+    }
+    if (appleMapsLink) {
+      result += ` <a href="${appleMapsLink}">Apple Maps</a>`;
+    }
+
     result += '\n';
   }
   return result;

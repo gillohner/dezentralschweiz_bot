@@ -308,7 +308,8 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                 if (location) {
                     const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?. [1];
                     const osmLink = event.tags.find(t => t[0] === 'r' && t[1].includes('openstreetmap.org'))?. [1];
-                    message += formatLocation(location, googleMapsLink, osmLink);
+                    const appleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('maps.apple.com'))?. [1];
+                    message += formatLocation(location, googleMapsLink, osmLink, appleMapsLink);
                 }
 
                 message += '\n';
