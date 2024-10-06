@@ -1,5 +1,5 @@
 import userStates from "../../userStates.js";
-import config from '../../config.js';
+import config from '../../bot/config.js';
 import {
     extractTelegramUsername,
     formatLocation,

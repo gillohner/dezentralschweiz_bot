@@ -7,7 +7,7 @@ import {
 import {
     fetchLocationData
 } from '../../nominatim.js'
-import config from '../../config.js';
+import config from '../../bot/config.js';
 import userStates from '../../userStates.js'
 
 const handleMeetupSuggestion = (bot, msg) => {
