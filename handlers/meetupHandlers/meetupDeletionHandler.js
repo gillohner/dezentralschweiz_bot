@@ -7,7 +7,7 @@ import {
     fetchEventDirectly
 } from '../../utils/nostrUtils.js';
 import userStates from '../../userStates.js'
-import config from '../../config.js';
+import config from '../../bot/config.js';
 
 const handleMeetupDeletion = (bot, msg) => {
     if (msg.chat.type !== 'private') {

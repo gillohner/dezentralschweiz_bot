@@ -1,9 +1,9 @@
 import TelegramBot from 'node-telegram-bot-api';
-import config from './config.js';
+import config from './bot/config.js';
 import communityLinks from './datasets/communityLinks.js';
 import {
   setupCommands
-} from './commands.js';
+} from './bot/commands.js';
 import {
   handleMeetupSuggestion
 } from './handlers/meetupHandlers/meetupSuggestionHandler.js'

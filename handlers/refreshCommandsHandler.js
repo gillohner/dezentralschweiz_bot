@@ -1,6 +1,6 @@
 import {
     setupCommands
-} from '../commands.js';
+} from '../bot/commands.js';
 
 const handleRefreshCommands = async (bot, msg) => {
     const chatId = msg.chat.id;
