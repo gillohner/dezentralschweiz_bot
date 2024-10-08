@@ -10,6 +10,7 @@ import {
 import config from '../../bot/config.js';
 import userStates from '../../userStates.js'
 import { deleteMessage } from '../../utils/helpers.js';
+import { isValidDate, isValidTime } from '../../utils/validators.js';
 
 const handleMeetupSuggestion = (bot, msg) => {
     if (msg.chat.type !== 'private') {
@@ -107,7 +108,7 @@ const handleEventCreationStep = async (bot, msg) => {
             });
             break;
         case 'date':
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+            if (!isValidDate(text)) {
                 bot.sendMessage(chatId, 'Ungültiges Datumsformat. Bitte verwende YYYY-MM-DD:\n\nOder tippe /cancel um abzubrechen.', {
                     disable_notification: true
                 });
@@ -120,7 +121,7 @@ const handleEventCreationStep = async (bot, msg) => {
             });
             break;
         case 'time':
-            if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(text)) {
+            if (!isValidTime(text)) {
                 bot.sendMessage(chatId, 'Ungültiges Zeitformat. Bitte verwende HH:MM:\n\nOder tippe /cancel um abzubrechen.', {
                     disable_notification: true
                 });
