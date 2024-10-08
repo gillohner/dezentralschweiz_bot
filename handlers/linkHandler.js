@@ -6,7 +6,9 @@ import userStates from '../userStates.js';
 
 // Helpers
 import {
-    deleteMessageWithTimeout
+    deleteMessageWithTimeout,
+    deleteMessage,
+    sendAndStoreMessage
 } from '../utils/helpers.js'
 
 const handleLinks = async (bot, msg, communityLinks) => {
@@ -25,24 +27,21 @@ const handleLinks = async (bot, msg, communityLinks) => {
     };
 
     // Delete the user's /links command message
-    try {
-        await bot.deleteMessage(chatId, msg.message_id);
-    } catch (error) {
-        console.error('Error deleting user command message:', error);
-    }
-
-    const sentMessage = await bot.sendMessage(chatId, 'Wähle eine Kategorie:', {
-        reply_markup: JSON.stringify(keyboard),
-        disable_notification: true
-    });
-
-    // Store the message ID for future deletion
-    userStates[chatId] = {
-        ...userStates[chatId],
-        lastLinksMessageId: sentMessage.message_id
+    if (msg.message_id) {
+        deleteMessage(bot, chatId, msg.message_id);
     };
 
-    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+    const sentMessage = await sendAndStoreMessage(
+        bot,
+        chatId,
+        'Wähle eine Kategorie:', {
+            reply_markup: JSON.stringify(keyboard),
+            disable_notification: true
+        },
+        'lastLinksMessageId'
+    );
+
+    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id, 10 * 60 * 1000);
 };
 
 const handleLinksCallback = async (bot, callbackQuery) => {
@@ -57,12 +56,12 @@ const handleLinksCallback = async (bot, callbackQuery) => {
         });
         try {
             // Delete the selection message
-            await bot.deleteMessage(chatId, msg.message_id);
+            deleteMessage(bot, chatId, msg.message_id);
             delete userStates[chatId].lastLinksMessageId;
 
             // Delete the last category message if it exists
             if (userStates[chatId]?.lastLinksCategoryMessageId) {
-                await bot.deleteMessage(chatId, userStates[chatId].lastLinksCategoryMessageId);
+                deleteMessage(bot, chatId, userStates[chatId].lastLinksCategoryMessageId);
                 delete userStates[chatId].lastLinksCategoryMessageId;
             }
         } catch (error) {
@@ -80,26 +79,21 @@ const handleLinksCallback = async (bot, callbackQuery) => {
 
         // Delete the previous category message if it exists
         if (userStates[chatId]?.lastLinksCategoryMessageId) {
-            try {
-                await bot.deleteMessage(chatId, userStates[chatId].lastLinksCategoryMessageId);
-            } catch (error) {
-                console.error('Error deleting previous category message:', error);
-            }
+            deleteMessage(bot, chatId, userStates[chatId].lastLinksCategoryMessageId);
         }
 
-        const sentMessage = await bot.sendMessage(chatId, message, {
-            parse_mode: 'HTML',
-            disable_web_page_preview: true,
-            disable_notification: true
-        });
+        const sentMessage = await sendAndStoreMessage(
+            bot,
+            chatId,
+            message, {
+                parse_mode: 'HTML',
+                disable_web_page_preview: true,
+                disable_notification: true
+            },
+            'lastLinksCategoryMessageId'
+        );
 
-        // Store the new category message ID
-        userStates[chatId] = {
-            ...userStates[chatId],
-            lastLinksCategoryMessageId: sentMessage.message_id
-        };
-
-        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id, 5 * 60 * 1000);
     }
 }
 

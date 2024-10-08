@@ -9,6 +9,7 @@ import {
 } from '../../nominatim.js'
 import config from '../../bot/config.js';
 import userStates from '../../userStates.js'
+import { deleteMessage } from '../../utils/helpers.js';
 
 const handleMeetupSuggestion = (bot, msg) => {
     if (msg.chat.type !== 'private') {
@@ -65,8 +66,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     bot.answerCallbackQuery(callbackQuery.id, {
         text: isApproved ? 'Event genehmigt' : 'Event abgelehnt'
     });
-    console.log(config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
-    bot.deleteMessage(config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
+    deleteMessage(bot, config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
 }
 
 const startEventSuggestion = (bot, chatId, msg) => {

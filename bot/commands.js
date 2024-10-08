@@ -7,10 +7,6 @@ const commands = [{
         description: 'Zeige bevorstehende Meetups'
     },
     {
-        command: 'refresh_commands',
-        description: 'Aktualisiere die Befehlsliste'
-    },
-    {
         command: 'links',
         description: 'Zeige Community-Links'
     },

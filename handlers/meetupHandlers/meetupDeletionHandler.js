@@ -8,6 +8,9 @@ import {
 } from '../../utils/nostrUtils.js';
 import userStates from '../../userStates.js'
 import config from '../../bot/config.js';
+import {
+    deleteMessage
+} from '../../utils/helpers.js'
 
 const handleMeetupDeletion = (bot, msg) => {
     if (!isPrivateChat(msg)) {
@@ -62,7 +65,7 @@ const handleAdminMeetupDeletionApproval = async (bot, callbackQuery) => {
     bot.answerCallbackQuery(callbackQuery.id, {
         text: isApproved ? 'Löschung genehmigt' : 'Löschung abgelehnt'
     });
-    bot.deleteMessage(adminChatId, callbackQuery.message.message_id);
+    deleteMessage(bot, adminChatId, callbackQuery.message.message_id);
 }
 
 

@@ -13,7 +13,12 @@ import {
 import {
     nip19
 } from 'nostr-tools';
-import { deleteMessageWithTimeout, sendAndStoreMessage, deleteMessage } from "../../utils/helpers.js";
+import {
+    deleteMessageWithTimeout,
+    sendAndStoreMessage,
+    deleteMessage,
+    editAndStoreMessage
+} from "../../utils/helpers.js";
 
 
 const handleMeetups = async (bot, msg) => {
@@ -46,14 +51,13 @@ const handleMeetups = async (bot, msg) => {
     if (userStates[chatId]?.lastMeetupMessageId) {
         deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
     };
-    const sentMessage = sendAndStoreMessage(
+    const sentMessage = await sendAndStoreMessage(
         bot,
-        chatId, 
-        'Wähle den Zeitraum für die Meetups:', 
-        { 
+        chatId,
+        'Wähle den Zeitraum für die Meetups:', {
             reply_markup: JSON.stringify(keyboard),
-            disable_notification: true 
-        }, 
+            disable_notification: true
+        },
         'lastMeetupMessageId'
     );
     deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
@@ -65,11 +69,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
     try {
         // Delete the previous message if it exists
         if (userStates[chatId]?.lastMeetupMessageId) {
-            try {
-                await bot.deleteMessage(chatId, userStates[chatId].lastMeetupMessageId);
-            } catch (error) {
-                console.error('Error deleting previous message:', error);
-            }
+            deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
         }
 
         const loadingMessage = await bot.sendMessage(chatId, 'Mining new Meetups, bitte warten...', {
@@ -89,17 +89,18 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         }
 
         if (allEvents.length === 0) {
-            const sentMessage = await bot.editMessageText('Keine Kalender oder Meetups gefunden.', {
-                chat_id: chatId,
-                message_id: loadingMessage.message_id,
-                disable_notification: true
-            });
-            userStates[chatId] = {
-                ...userStates[chatId],
-                lastMeetupMessageId: sentMessage.message_id
-            };
+            const sentMessage = await editAndStoreMessage(
+                bot,
+                chatId,
+                'Keine Kalender oder Meetups gefunden.', {
+                    chat_id: chatId,
+                    message_id: loadingMessage.message_id,
+                    disable_notification: true
+                },
+                'lastMeetupMessageId'
+            );        
 
-            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
 
             return;
         }
@@ -107,52 +108,51 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         const filteredEvents = sortEventsByStartDate(filterEventsByTimeFrame(allEvents, timeFrame));
 
         if (filteredEvents.every(cal => cal.events.length === 0)) {
-            const sentMessage = await bot.editMessageText(`Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
-                chat_id: chatId,
-                message_id: loadingMessage.message_id,
-                disable_notification: true
-            });
-            userStates[chatId] = {
-                ...userStates[chatId],
-                lastMeetupMessageId: sentMessage.message_id
-            };
+            const sentMessage = await editAndStoreMessage(
+                bot,
+                chatId,
+                `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`,
+                {
+                    chat_id: chatId,
+                    message_id: loadingMessage.message_id,
+                    disable_notification: true
+                },
+                'lastMeetupMessageId'
+            )
 
-            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
 
             return;
         }
 
-        const message = await formatMeetupsMessage(filteredEvents, timeFrame);
+        const meetupMessage = await formatMeetupsMessage(filteredEvents, timeFrame);
 
-        let sentMessage;
-        if (message.length) {
-            sentMessage = await bot.editMessageText(message, {
+        const sentMessage = editAndStoreMessage(
+            bot,
+            chatId,
+            meetupMessage,{
                 chat_id: chatId,
                 message_id: loadingMessage.message_id,
                 parse_mode: 'HTML',
                 disable_web_page_preview: true,
                 disable_notification: true,
-            });
-        }
+            },
+            'lastMeetupMessageId'
+        );
 
-        // Store the message ID
-        userStates[chatId] = {
-            ...userStates[chatId],
-            lastMeetupMessageId: sentMessage.message_id
-        };
-
-        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        const errorMessage = await bot.sendMessage(chatId, 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.', {
-            disable_notification: true
-        });
-        userStates[chatId] = {
-            ...userStates[chatId],
-            lastMeetupMessageId: errorMessage.message_id
-        };
+        const errorMessage = await sendAndStoreMessage(
+            bot,
+            chatId,
+            'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.', {
+                disable_notification: true
+            },
+            'lastMeetupMessageId'
+        );
 
-        deleteMessageWithTimeout(bot, chatId, errorMessage.message_id)    
+        deleteMessageWithTimeout(bot, chatId, errorMessage.message_id)
     }
 };
 

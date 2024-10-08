@@ -14,6 +14,9 @@ import {
     handleRetryLocation,
     handleOptionalField,
 } from './meetupHandlers/meetupSuggestionHandler.js'
+import {
+    deleteMessage
+} from '../utils/helpers.js'
 
 const handleCallbackQuery = async (bot, callbackQuery) => {
     const action = callbackQuery.data;
@@ -40,7 +43,7 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
         bot.answerCallbackQuery(callbackQuery.id, {
             text: 'Meetup-Erstellung abgebrochen'
         });
-        bot.deleteMessage(chatId, msg.message_id);
+        deleteMessage(bot, chatId, msg.message_id);
     } else if (action === 'confirm_location') {
         handleConfirmLocation(bot, callbackQuery);
     } else if (action === 'retry_location') {
