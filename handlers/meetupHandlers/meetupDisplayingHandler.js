@@ -19,6 +19,10 @@ import {
     deleteMessage,
     editAndStoreMessage
 } from "../../utils/helpers.js";
+import {
+    fetchAndFilterEvents,
+    filterEventsByTimeFrame
+} from "../../utils/eventUtils.js";
 
 
 const handleMeetups = async (bot, msg) => {
@@ -76,17 +80,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             disable_notification: true
         });
 
-        let allEvents = [];
-        for (const naddr of config.NADDR_LIST) {
-            console.log(`Fetching events for calendar: ${naddr}`);
-            const result = await fetchCalendarEvents(naddr);
-            if (result && result.calendarName) {
-                allEvents.push(result);
-                console.log(`Fetched events for calendar: ${result.calendarName}`);
-            } else {
-                console.error(`Failed to fetch calendar events for ${naddr}`);
-            }
-        }
+        let allEvents = await fetchAndFilterEvents(config, timeFrame);
 
         if (allEvents.length === 0) {
             const sentMessage = await editAndStoreMessage(
@@ -98,21 +92,21 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                     disable_notification: true
                 },
                 'lastMeetupMessageId'
-            );        
+            );
 
             deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
 
             return;
         }
 
-        const filteredEvents = sortEventsByStartDate(filterEventsByTimeFrame(allEvents, timeFrame));
+        const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
 
+        console.log("ejhje")
         if (filteredEvents.every(cal => cal.events.length === 0)) {
             const sentMessage = await editAndStoreMessage(
                 bot,
                 chatId,
-                `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`,
-                {
+                `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
                     chat_id: chatId,
                     message_id: loadingMessage.message_id,
                     disable_notification: true
@@ -130,7 +124,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         const sentMessage = editAndStoreMessage(
             bot,
             chatId,
-            meetupMessage,{
+            meetupMessage, {
                 chat_id: chatId,
                 message_id: loadingMessage.message_id,
                 parse_mode: 'HTML',
@@ -155,47 +149,6 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         deleteMessageWithTimeout(bot, chatId, errorMessage.message_id)
     }
 };
-
-const sortEventsByStartDate = (eventList) => {
-    return eventList.map(calendar => ({
-        ...calendar,
-        events: calendar.events.sort((a, b) => {
-            const aStart = parseInt(a.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000;
-            const bStart = parseInt(b.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000;
-            return aStart - bStart;
-        })
-    }));
-};
-
-const filterEventsByTimeFrame = (allEvents, timeFrame) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
-    const endOfWeek = new Date(today);
-    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
-    endOfWeek.setHours(23, 59, 59, 999);
-    const endOfMonth = new Date(today.getTime() + 31 * 24 * 60 * 60 * 1000);
-    endOfMonth.setHours(23, 59, 59, 999);
-
-    return allEvents.map(calendar => ({
-        ...calendar,
-        events: calendar.events.filter(event => {
-            const eventDate = new Date(parseInt(event.tags.find(t => t[0] === 'start')?. [1] || '0') * 1000);
-            switch (timeFrame) {
-                case 'today':
-                    return eventDate >= today && eventDate <= endOfDay;
-                case 'week':
-                    return eventDate >= today && eventDate <= endOfWeek;
-                case 'month':
-                    return eventDate >= today && eventDate <= endOfMonth;
-                default:
-                    return eventDate >= today;
-            }
-        })
-    }));
-};
-
 const formatMeetupsMessage = async (allEvents, timeFrame) => {
     let message = `🍻 <b>${getHeaderMessage(timeFrame)}</b> 🍻\n\n`;
 
@@ -208,7 +161,9 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
             const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
             message += `<b>📅 <a href="${calendarUrl}">${escapeHTML(calendarName)}</a></b>\n\n`;
 
-            for (const event of events) {
+            for (let i = 0; i < events.length; i++) {
+                const event = events[i];
+
                 if (await checkForDeletionEvent(event.id)) continue;
 
                 const title = event.tags.find(t => t[0] === 'name')?. [1] || event.tags.find(t => t[0] === 'title')?. [1];
@@ -248,7 +203,10 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                     message += formatLocation(location, googleMapsLink, osmLink, appleMapsLink);
                 }
 
-                message += '\n';
+                // Add separator only if this is not the last event
+                if (i < events.length - 1) {
+                    message += '\n\┄━━━━━━━━━━━━━━━━┄\n\n';
+                }
             }
         }
     }
@@ -272,8 +230,6 @@ const getHeaderMessage = (timeFrame) => {
 export {
     handleMeetups,
     handleMeetupsFilter,
-    filterEventsByTimeFrame,
     formatMeetupsMessage,
     getHeaderMessage,
-    sortEventsByStartDate,
 };
