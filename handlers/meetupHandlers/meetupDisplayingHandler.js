@@ -159,17 +159,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         const message = await formatMeetupsMessage(filteredEvents, timeFrame);
 
         let sentMessage;
-        if (message.length > 4000) {
-            await bot.deleteMessage(chatId, loadingMessage.message_id);
-            const chunks = message.match(/.{1,4000}/gs);
-            for (const chunk of chunks) {
-                sentMessage = await bot.sendMessage(chatId, chunk, {
-                    parse_mode: 'HTML',
-                    disable_web_page_preview: true,
-                    disable_notification: true
-                });
-            }
-        } else {
+        if (message.length) {
             sentMessage = await bot.editMessageText(message, {
                 chat_id: chatId,
                 message_id: loadingMessage.message_id,
@@ -299,7 +289,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 
                 const telegramUser = extractTelegramUsername(event.tags);
                 if (telegramUser) {
-                    message += `👤 ${telegramUser}\n`;
+                    message += `👤 ${escapeHTML(telegramUser)}\n`;
                 }
 
                 if (location) {
