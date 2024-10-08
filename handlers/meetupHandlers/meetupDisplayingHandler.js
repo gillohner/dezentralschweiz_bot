@@ -159,9 +159,9 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
         const message = await formatMeetupsMessage(filteredEvents, timeFrame);
 
         let sentMessage;
-        if (message.length > 4096) {
+        if (message.length > 4000) {
             await bot.deleteMessage(chatId, loadingMessage.message_id);
-            const chunks = message.match(/.{1,4096}/gs);
+            const chunks = message.match(/.{1,4000}/gs);
             for (const chunk of chunks) {
                 sentMessage = await bot.sendMessage(chatId, chunk, {
                     parse_mode: 'HTML',

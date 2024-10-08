@@ -8,7 +8,16 @@ const escapeHTML = (text) => {
 };
 
 const extractTelegramUsername = (tags) => {
-  return null;
+  try {
+    const rTag = tags.find(t => t[0] === 'r' && t[1].startsWith('https://t.me/'));
+    if (rTag) {
+      const username = rTag[1].split('/').pop();
+      return `@${username}`;
+    }
+    return null;
+  } catch (e) {
+    console.error("Telegram user extraction failed: ", e);
+  }
 };
 
 const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
