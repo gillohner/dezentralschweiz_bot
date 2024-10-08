@@ -1,37 +1,25 @@
+// External Libraries
 import TelegramBot from 'node-telegram-bot-api';
-import config from './bot/config.js';
-import communityLinks from './datasets/communityLinks.js';
-import {
-  setupCommands
-} from './bot/commands.js';
-import {
-  handleMeetupSuggestion
-} from './handlers/meetupHandlers/meetupSuggestionHandler.js'
-import {
-  handleMeetups
-} from './handlers/meetupHandlers/meetupDisplayingHandler.js'
-import {
-  handleLinks
-} from './handlers/linkHandler.js'
-import {
-  handleCallbackQuery
-} from './handlers/callbackHandler.js'
-import {
-  handleRefreshCommands
-} from './handlers/refreshCommandsHandler.js'
-import {
-  handleMeetupDeletion
-} from './handlers/meetupHandlers/meetupDeletionHandler.js'
-import {
-  handleNewMember
-} from './handlers/newMemberHandler.js'
-import {
-  handleMessage
-} from './handlers/messageHandler.js'
-import {
-  handleStart
-} from './handlers/startHandler.js'
+import { getPublicKey, nip19 } from 'nostr-tools';
 
+// Config and State
+import config from './bot/config.js';
+import userStates from './userStates.js';
+
+// Handlers
+import { setupCommands } from './bot/commands.js';
+import { handleMeetupSuggestion } from './handlers/meetupHandlers/meetupSuggestionHandler.js';
+import { handleMeetups } from './handlers/meetupHandlers/meetupDisplayingHandler.js';
+import { handleLinks } from './handlers/linkHandler.js';
+import { handleCallbackQuery } from './handlers/callbackHandler.js';
+import { handleRefreshCommands } from './handlers/refreshCommandsHandler.js';
+import { handleMeetupDeletion } from './handlers/meetupHandlers/meetupDeletionHandler.js';
+import { handleNewMember } from './handlers/newMemberHandler.js';
+import { handleMessage } from './handlers/messageHandler.js';
+import { handleStart } from './handlers/startHandler.js';
+
+// Datasets
+import communityLinks from './datasets/communityLinks.js';
 
 const bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, {
   polling: true

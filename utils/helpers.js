@@ -64,9 +64,20 @@ const formatDate = (timestamp) => {
   });
 };
 
+const deleteMessageWithTimeout = async (bot, chatId, messageId, timeout = 5 * 60 * 1000) => { // 5 min. default
+  setTimeout(async () => {
+      try {
+          await bot.deleteMessage(chatId, messageId);
+      } catch (error) {
+          console.error('Error deleting message:', error);
+      }
+  }, timeout);
+};
+
 export {
   extractTelegramUsername,
   formatLocation,
   formatDate,
-  escapeHTML
+  escapeHTML,
+  deleteMessageWithTimeout,
 };

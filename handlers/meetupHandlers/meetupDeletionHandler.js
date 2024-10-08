@@ -10,29 +10,30 @@ import userStates from '../../userStates.js'
 import config from '../../bot/config.js';
 
 const handleMeetupDeletion = (bot, msg) => {
-    if (msg.chat.type !== 'private') {
-        bot.sendMessage(msg.chat.id, 'Dieser Befehl funktioniert nur in privaten Nachrichten. Bitte sende mir eine direkte Nachricht, um eine Eventlöschung anzufordern.', {
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: 'Zum Bot',
-                        url: `https://t.me/${bot.username}`
-                    }]
-                ]
-            },
-            disable_notification: true
-        });
+    if (!isPrivateChat(msg)) {
+        sendPrivateMessageRequest(bot, msg);
         return;
     }
-    handleDeleteEventRequest(bot, msg);
+    initiateEventDeletion(bot, msg);
 };
 
-const handleDeleteEventRequest = (bot, msg) => {
+const isPrivateChat = (msg) => msg.chat.type === 'private';
+
+const sendPrivateMessageRequest = (bot, msg) => {
+    bot.sendMessage(msg.chat.id, 'Dieser Befehl funktioniert nur in privaten Nachrichten...', {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Zum Bot', url: `https://t.me/${bot.username}` }]
+            ]
+        },
+        disable_notification: true
+    });
+};
+
+const initiateEventDeletion = (bot, msg) => {
     const chatId = msg.chat.id;
-    userStates[chatId] = {
-        step: 'awaiting_event_id_for_deletion'
-    };
-    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein, oder /cancel um abzubrechen:", {
+    userStates[chatId] = { step: 'awaiting_event_id_for_deletion' };
+    bot.sendMessage(chatId, "Bitte geben Sie die Event-ID oder NADDR des zu löschenden Events ein...", {
         disable_notification: true
     });
 };
@@ -190,7 +191,6 @@ Möchten Sie dieses Event löschen?
 };
 
 export {
-    handleDeleteEventRequest,
     handleMeetupDeletion,
     handleDeletionConfirmation,
     handleAdminMeetupDeletionApproval,

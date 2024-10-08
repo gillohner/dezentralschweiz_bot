@@ -13,6 +13,7 @@ import {
 import {
     nip19
 } from 'nostr-tools';
+import { deleteMessageWithTimeout } from "../../utils/helpers.js";
 
 
 const handleMeetups = async (bot, msg) => {
@@ -67,14 +68,7 @@ const handleMeetups = async (bot, msg) => {
     };
 
     // Set a timer to delete the message after 5 minutes
-    setTimeout(async () => {
-        try {
-            await bot.deleteMessage(chatId, sentMessage.message_id);
-            delete userStates[chatId].lastMeetupMessageId;
-        } catch (error) {
-            console.error('Error deleting meetup list message:', error);
-        }
-    }, 5 * 60 * 1000);
+    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
 };
 
 const handleMeetupsFilter = async (bot, msg, timeFrame) => {
@@ -117,15 +111,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 lastMeetupMessageId: sentMessage.message_id
             };
 
-            // Set a timer to delete the "no meetups" message after 5 minutes
-            setTimeout(async () => {
-                try {
-                    await bot.deleteMessage(chatId, sentMessage.message_id);
-                    delete userStates[chatId].lastMeetupMessageId;
-                } catch (error) {
-                    console.error('Error deleting "no meetups" message:', error);
-                }
-            }, 5 * 60 * 1000);
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
 
             return;
         }
@@ -143,15 +129,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
                 lastMeetupMessageId: sentMessage.message_id
             };
 
-            // Set a timer to delete the "no meetups" message after 5 minutes
-            setTimeout(async () => {
-                try {
-                    await bot.deleteMessage(chatId, sentMessage.message_id);
-                    delete userStates[chatId].lastMeetupMessageId;
-                } catch (error) {
-                    console.error('Error deleting "no meetups" message:', error);
-                }
-            }, 5 * 60 * 1000);
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
 
             return;
         }
@@ -175,16 +153,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             lastMeetupMessageId: sentMessage.message_id
         };
 
-        // Set a timer to delete the meetup message after 5 minutes
-        setTimeout(async () => {
-            try {
-                await bot.deleteMessage(chatId, sentMessage.message_id);
-                delete userStates[chatId].lastMeetupMessageId;
-            } catch (error) {
-                console.error('Error deleting meetup message:', error);
-            }
-        }, 5 * 60 * 1000);
-
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
         const errorMessage = await bot.sendMessage(chatId, 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.', {
@@ -195,15 +164,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             lastMeetupMessageId: errorMessage.message_id
         };
 
-        // Set a timer to delete the error message after 5 minutes
-        setTimeout(async () => {
-            try {
-                await bot.deleteMessage(chatId, errorMessage.message_id);
-                delete userStates[chatId].lastMeetupMessageId;
-            } catch (error) {
-                console.error('Error deleting error message:', error);
-            }
-        }, 5 * 60 * 1000);
+        deleteMessageWithTimeout(bot, chatId, errorMessage.message_id)    
     }
 };
 

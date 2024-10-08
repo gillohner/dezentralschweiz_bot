@@ -1,5 +1,13 @@
+// Datasets
 import communityLinks from '../datasets/communityLinks.js';
+
+// State
 import userStates from '../userStates.js';
+
+// Helpers
+import {
+    deleteMessageWithTimeout
+} from '../utils/helpers.js'
 
 const handleLinks = async (bot, msg, communityLinks) => {
     const chatId = msg.chat.id;
@@ -34,15 +42,7 @@ const handleLinks = async (bot, msg, communityLinks) => {
         lastLinksMessageId: sentMessage.message_id
     };
 
-    // Set a timer to delete the message after 5 minutes
-    setTimeout(async () => {
-        try {
-            await bot.deleteMessage(chatId, sentMessage.message_id);
-            delete userStates[chatId].lastLinksMessageId;
-        } catch (error) {
-            console.error('Error deleting links selection message:', error);
-        }
-    }, 5 * 60 * 1000);
+    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
 };
 
 const handleLinksCallback = async (bot, callbackQuery) => {
@@ -99,15 +99,7 @@ const handleLinksCallback = async (bot, callbackQuery) => {
             lastLinksCategoryMessageId: sentMessage.message_id
         };
 
-        // Set a timer to delete the category message after 5 minutes
-        setTimeout(async () => {
-            try {
-                await bot.deleteMessage(chatId, sentMessage.message_id);
-                delete userStates[chatId].lastLinksCategoryMessageId;
-            } catch (error) {
-                console.error('Error deleting links category message:', error);
-            }
-        }, 5 * 60 * 1000);
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
     }
 }
 
