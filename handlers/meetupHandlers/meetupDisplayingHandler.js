@@ -13,7 +13,7 @@ import {
 import {
     nip19
 } from 'nostr-tools';
-import { deleteMessageWithTimeout } from "../../utils/helpers.js";
+import { deleteMessageWithTimeout, sendAndStoreMessage, deleteMessage } from "../../utils/helpers.js";
 
 
 const handleMeetups = async (bot, msg) => {
@@ -40,35 +40,23 @@ const handleMeetups = async (bot, msg) => {
     };
 
     // Delete the user's /meetup command message
-    try {
-        await bot.deleteMessage(chatId, msg.message_id);
-    } catch (error) {
-        console.error('Error deleting user command message:', error);
-    }
+    deleteMessage(bot, chatId, msg.message_id);
 
-    // Delete the previous meetup message if it exists
+    // Delete previous meetup message
     if (userStates[chatId]?.lastMeetupMessageId) {
-        try {
-            await bot.deleteMessage(chatId, userStates[chatId].lastMeetupMessageId);
-        } catch (error) {
-            console.error('Error deleting previous meetup message:', error);
-        }
-    }
-
-    // Send new message and store its ID
-    const sentMessage = await bot.sendMessage(chatId, 'Wähle den Zeitraum für die Meetups:', {
-        reply_markup: JSON.stringify(keyboard),
-        disable_notification: true
-    });
-
-    // Update the stored message ID with the new meetup list message
-    userStates[chatId] = {
-        ...userStates[chatId],
-        lastMeetupMessageId: sentMessage.message_id
+        deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
     };
-
-    // Set a timer to delete the message after 5 minutes
-    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)    
+    const sentMessage = sendAndStoreMessage(
+        bot,
+        chatId, 
+        'Wähle den Zeitraum für die Meetups:', 
+        { 
+            reply_markup: JSON.stringify(keyboard),
+            disable_notification: true 
+        }, 
+        'lastMeetupMessageId'
+    );
+    deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
 };
 
 const handleMeetupsFilter = async (bot, msg, timeFrame) => {

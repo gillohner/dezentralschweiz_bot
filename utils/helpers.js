@@ -1,3 +1,5 @@
+import userStates from '../userStates.js';
+
 const escapeHTML = (text) => {
   return text
     .replace(/&/g, '&amp;')
@@ -64,7 +66,16 @@ const formatDate = (timestamp) => {
   });
 };
 
-const deleteMessageWithTimeout = async (bot, chatId, messageId, timeout = 5 * 60 * 1000) => { // 5 min. default
+const deleteMessage = async (bot, chatId, messageId) => {
+  try {
+    await bot.deleteMessage(chatId, messageId);
+  } catch (error) {
+      console.error('Error deleting message:', error);
+  }
+};
+
+const deleteMessageWithTimeout = async (bot, chatId, messageId, timeout = 5 * 1 * 1000) => { // 5 min. default 
+  //TODO: revert to 5 min
   setTimeout(async () => {
       try {
           await bot.deleteMessage(chatId, messageId);
@@ -74,10 +85,21 @@ const deleteMessageWithTimeout = async (bot, chatId, messageId, timeout = 5 * 60
   }, timeout);
 };
 
+const sendAndStoreMessage = async (bot, chatId, text, options, userStateKey) => {
+  const sentMessage = await bot.sendMessage(chatId, text, options);
+  userStates[chatId] = {
+      ...userStates[chatId],
+      [userStateKey]: sentMessage.message_id
+  };
+  return sentMessage;
+};
+
 export {
   extractTelegramUsername,
   formatLocation,
   formatDate,
   escapeHTML,
   deleteMessageWithTimeout,
+  sendAndStoreMessage,
+  deleteMessage,
 };
