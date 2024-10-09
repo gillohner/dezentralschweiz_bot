@@ -20,8 +20,7 @@ import {
     editAndStoreMessage
 } from "../../utils/helpers.js";
 import {
-    fetchAndFilterEvents,
-    filterEventsByTimeFrame
+    fetchAndProcessEvents
 } from "../../utils/eventUtils.js";
 
 
@@ -59,15 +58,15 @@ const handleMeetups = async (bot, msg) => {
         bot,
         chatId,
         'Wähle den Zeitraum für die Meetups:', {
-            reply_markup: JSON.stringify(keyboard),
-            disable_notification: true
-        },
+        reply_markup: JSON.stringify(keyboard),
+        disable_notification: true
+    },
         'lastMeetupMessageId'
     );
     deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
 };
 
-const handleMeetupsFilter = async (bot, msg, timeFrame) => {
+const handleMeetupsFilter = async (bot, msg, timeFrame, returnMessage = "lastMeetupMessageId") => {
     const chatId = msg.chat.id;
 
     try {
@@ -80,83 +79,77 @@ const handleMeetupsFilter = async (bot, msg, timeFrame) => {
             disable_notification: true
         });
 
-        let allEvents = await fetchAndFilterEvents(config, timeFrame);
+        const result = await fetchAndProcessEvents(config, timeFrame);
 
-        if (allEvents.length === 0) {
+        if (result.status === 'empty' || result.status === 'noEvents') {
             const sentMessage = await editAndStoreMessage(
                 bot,
                 chatId,
-                'Keine Kalender oder Meetups gefunden.', {
+                result.message,
+                {
                     chat_id: chatId,
                     message_id: loadingMessage.message_id,
                     disable_notification: true
                 },
-                'lastMeetupMessageId'
+                returnMessage
             );
 
-            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
 
-            return;
+            return returnMessage ? result.message : undefined;
         }
 
-        const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
+        const meetupMessage = await formatMeetupsMessage(result.events, timeFrame);
 
-        console.log("ejhje")
-        if (filteredEvents.every(cal => cal.events.length === 0)) {
-            const sentMessage = await editAndStoreMessage(
-                bot,
-                chatId,
-                `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.`, {
-                    chat_id: chatId,
-                    message_id: loadingMessage.message_id,
-                    disable_notification: true
-                },
-                'lastMeetupMessageId'
-            )
-
-            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
-
-            return;
+        if (returnMessage) {
+            return meetupMessage;
         }
 
-        const meetupMessage = await formatMeetupsMessage(filteredEvents, timeFrame);
-
-        const sentMessage = editAndStoreMessage(
+        const sentMessage = await editAndStoreMessage(
             bot,
             chatId,
-            meetupMessage, {
+            meetupMessage,
+            {
                 chat_id: chatId,
                 message_id: loadingMessage.message_id,
                 parse_mode: 'HTML',
                 disable_web_page_preview: true,
                 disable_notification: true,
             },
-            'lastMeetupMessageId'
+            returnMessage        
         );
 
-        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id)
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
     } catch (error) {
         console.error('Error in handleMeetupsFilter:', error);
-        const errorMessage = await sendAndStoreMessage(
+        const errorMessage = 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.';
+
+        if (returnMessage) {
+            return errorMessage;
+        }
+
+        const sentMessage = await sendAndStoreMessage(
             bot,
             chatId,
-            'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.', {
+            errorMessage,
+            {
                 disable_notification: true
             },
-            'lastMeetupMessageId'
+            returnMessage
         );
 
-        deleteMessageWithTimeout(bot, chatId, errorMessage.message_id)
+        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
     }
 };
+
 const formatMeetupsMessage = async (allEvents, timeFrame) => {
     let message = `🍻 <b>${getHeaderMessage(timeFrame)}</b> 🍻\n\n`;
 
     for (const {
-            calendarName,
-            events,
-            naddr
-        } of allEvents) {
+        calendarName,
+        events,
+        naddr
+    } of allEvents) {
         if (events.length > 0) {
             const calendarUrl = `https://www.flockstr.com/calendar/${naddr}`;
             message += `<b>📅 <a href="${calendarUrl}">${escapeHTML(calendarName)}</a></b>\n\n`;
@@ -166,13 +159,13 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 
                 if (await checkForDeletionEvent(event.id)) continue;
 
-                const title = event.tags.find(t => t[0] === 'name')?. [1] || event.tags.find(t => t[0] === 'title')?. [1];
+                const title = event.tags.find(t => t[0] === 'name')?.[1] || event.tags.find(t => t[0] === 'title')?.[1];
                 if (!title) continue;
 
-                const start = event.tags.find(t => t[0] === 'start')?. [1];
+                const start = event.tags.find(t => t[0] === 'start')?.[1];
                 if (!start) continue;
 
-                const end = event.tags.find(t => t[0] === 'end')?. [1];
+                const end = event.tags.find(t => t[0] === 'end')?.[1];
 
                 const locationTag = event.tags.find(t => t[0] === 'location');
                 const location = locationTag ? locationTag[1] : null;
@@ -180,7 +173,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                 const eventNaddr = nip19.naddrEncode({
                     kind: event.kind,
                     pubkey: event.pubkey,
-                    identifier: event.tags.find(t => t[0] === 'd')?. [1] || '',
+                    identifier: event.tags.find(t => t[0] === 'd')?.[1] || '',
                 });
                 const eventUrl = `https://www.flockstr.com/event/${eventNaddr}`;
 
@@ -197,9 +190,9 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                 }
 
                 if (location) {
-                    const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?. [1];
-                    const osmLink = event.tags.find(t => t[0] === 'r' && t[1].includes('openstreetmap.org'))?. [1];
-                    const appleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('maps.apple.com'))?. [1];
+                    const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?.[1];
+                    const osmLink = event.tags.find(t => t[0] === 'r' && t[1].includes('openstreetmap.org'))?.[1];
+                    const appleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('maps.apple.com'))?.[1];
                     message += formatLocation(location, googleMapsLink, osmLink, appleMapsLink);
                 }
 
