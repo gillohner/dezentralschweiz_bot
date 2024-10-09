@@ -30,7 +30,7 @@ const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
   if (googleMapsLink || osmLink || appleMapsLink) {
     result += '   ';
     if (googleMapsLink) {
-      result += `🌍 <a href="${googleMapsLink}">Google Maps</a>`;
+      result += `🌍 <a href="${googleMapsLink}">Google</a>`;
     }
 
     // OpenStreetMap Link
@@ -38,7 +38,7 @@ const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
       result += ' | ';
     }
     if (osmLink) {
-      result += `🕵️ <a href="${osmLink}">OpenStreetMap</a>`;
+      result += `🕵️ <a href="${osmLink}">OSM</a>`;
     }
 
     // AppleMaps Link
@@ -46,7 +46,7 @@ const formatLocation = (location, googleMapsLink, osmLink, appleMapsLink) => {
       result += ' | ';
     }
     if (appleMapsLink) {
-      result += ` <a href="${appleMapsLink}">Apple Maps</a>`;
+      result += `🍏 <a href="${appleMapsLink}">Apple</a>`;
     }
 
     result += '\n';
