@@ -58,16 +58,7 @@ const fetchEventDirectly = async (filter) => {
                 reject(error);
             });
         });
-
-        if (event) {
-
-            // Check for deletion events
-            const deletionEvent = await checkForDeletionEvent(event.id);
-            if (deletionEvent) {
-                return null;
-            }
-            return event;
-        }
+        return event;
     } catch (error) {
         console.error(`Error fetching event from relay ${config.FETCH_RELAY}:`, error);
     }

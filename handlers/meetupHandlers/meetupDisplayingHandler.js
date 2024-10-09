@@ -205,7 +205,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 
                 // Add separator only if this is not the last event
                 if (i < events.length - 1) {
-                    message += '\n\┄━━━━━━━━━━━━━━━━┄\n\n';
+                    message += '\n🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶\n\n';
                 }
             }
         }
