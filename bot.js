@@ -1,10 +1,11 @@
 // External Libraries
 import TelegramBot from 'node-telegram-bot-api';
-import { getPublicKey, nip19 } from 'nostr-tools';
 
-// Config and State
+// Config
 import config from './bot/config.js';
-import userStates from './userStates.js';
+
+// Import Tasks
+import { scheduleWeeklyMeetupPost } from "./scheduledTasks.js"
 
 // Handlers
 import { setupCommands } from './bot/commands.js';
@@ -52,6 +53,7 @@ const main = async () => {
   await setupCommands(bot);
   await initializeBot(bot);
   setupEventHandlers(bot);
+  scheduleWeeklyMeetupPost(bot);
 };
 
 main();
