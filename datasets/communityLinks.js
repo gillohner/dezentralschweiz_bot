@@ -115,6 +115,10 @@ const communityLinks = {
       url: 'https://www.bitcoin-mentoring.me'
     },
     {
+      name: '21Lectures',
+      url: 'https://21lectures.com/partner/dezentralschweiz/'
+    },
+    {
       name: "Bitcoin Block",
       url: "https://bitcoinblock.study/"
     },
@@ -161,6 +165,10 @@ const communityLinks = {
     {
       name: 'Bittr',
       url: 'https://getbittr.com/'
+    },
+    {
+      name: 'ZeusATM',
+      url: 'https://zeusatm.ch/'
     }
   ],
   'Shops': [
