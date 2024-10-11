@@ -22,6 +22,7 @@ import {
 import {
     fetchAndProcessEvents
 } from "../../utils/eventUtils.js";
+import url from 'url';
 
 
 const handleMeetups = async (bot, msg) => {
@@ -190,9 +191,19 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
                 }
 
                 if (location) {
-                    const googleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('google.com/maps'))?.[1];
-                    const osmLink = event.tags.find(t => t[0] === 'r' && t[1].includes('openstreetmap.org'))?.[1];
-                    const appleMapsLink = event.tags.find(t => t[0] === 'r' && t[1].includes('maps.apple.com'))?.[1];
+                    const allowedHosts = ['google.com', 'openstreetmap.org', 'maps.apple.com'];
+                    const googleMapsLink = event.tags.find(t => {
+                        const host = url.parse(t[1]).host;
+                        return t[0] === 'r' && allowedHosts.includes(host) && host === 'google.com';
+                    })?.[1];
+                    const osmLink = event.tags.find(t => {
+                        const host = url.parse(t[1]).host;
+                        return t[0] === 'r' && allowedHosts.includes(host) && host === 'openstreetmap.org';
+                    })?.[1];
+                    const appleMapsLink = event.tags.find(t => {
+                        const host = url.parse(t[1]).host;
+                        return t[0] === 'r' && allowedHosts.includes(host) && host === 'maps.apple.com';
+                    })?.[1];
                     message += formatLocation(location, googleMapsLink, osmLink, appleMapsLink);
                 }
 
