@@ -5,7 +5,6 @@ import { deleteMessage, sendAndStoreMessage, editAndStoreMessage } from './utils
 import config from './bot/config.js';
 
 const scheduleWeeklyMeetupPost = (bot) => {
-    postWeeklyMeetups(bot)
     schedule.scheduleJob('0 7 * * 1', async () => {
         console.log('Running scheduled weekly meetup post');
         await postWeeklyMeetups(bot);

@@ -6,7 +6,7 @@ import {
 } from 'nostr-tools'
 import {
     fetchLocationData
-} from '../../nominatim.js'
+} from '../../utils/openstreetmap/nominatim.js'
 import config from '../../bot/config.js';
 import userStates from '../../userStates.js'
 import { deleteMessage } from '../../utils/helpers.js';
