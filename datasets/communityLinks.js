@@ -123,10 +123,6 @@ const communityLinks = {
       url: "https://bitcoinblock.study/"
     },
     {
-      name: "21 Lessons",
-      url: "https://21lessons.com/"
-    },
-    {
       name: "House of Satoshi",
       url: "https://www.house-of-satoshi.ch/"
     }
