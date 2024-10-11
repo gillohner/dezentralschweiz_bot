@@ -1,5 +1,4 @@
 import { fetchCalendarEvents } from './nostrUtils.js';
-
 const sortEventsByStartDate = (eventList) => {
   return eventList.map(calendar => ({
     ...calendar,
@@ -21,6 +20,22 @@ const fetchAndFilterEvents = async (config, timeFrame) => {
     }
   }
   return sortEventsByStartDate(filterEventsByTimeFrame(allEvents, timeFrame));
+};
+
+const fetchAndProcessEvents = async (config, timeFrame) => {
+  let allEvents = await fetchAndFilterEvents(config, timeFrame);
+
+  if (allEvents.length === 0) {
+    return { status: 'empty', message: 'Keine Kalender oder Meetups gefunden.' };
+  }
+
+  const filteredEvents = filterEventsByTimeFrame(allEvents, timeFrame);
+
+  if (filteredEvents.every(cal => cal.events.length === 0)) {
+    return { status: 'noEvents', message: `Keine Meetups für den gewählten Zeitraum (${timeFrame}) gefunden.` };
+  }
+
+  return { status: 'success', events: filteredEvents };
 };
 
 const filterEventsByTimeFrame = (allEvents, timeFrame) => {
@@ -52,6 +67,5 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
 };
 
 export {
-  fetchAndFilterEvents,
-  filterEventsByTimeFrame
+  fetchAndProcessEvents,
 };
