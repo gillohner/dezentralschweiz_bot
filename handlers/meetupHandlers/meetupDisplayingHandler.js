@@ -71,40 +71,15 @@ const handleMeetupsFilter = async (bot, msg, timeFrame, returnMessage = "lastMee
     const chatId = msg.chat.id;
 
     try {
-        // Delete the previous message if it exists
         if (userStates[chatId]?.lastMeetupMessageId) {
-            deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
+            await deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
         }
 
         const loadingMessage = await bot.sendMessage(chatId, 'Mining new Meetups, bitte warten...', {
             disable_notification: true
         });
 
-        const result = await fetchAndProcessEvents(config, timeFrame);
-
-        if (result.status === 'empty' || result.status === 'noEvents') {
-            const sentMessage = await editAndStoreMessage(
-                bot,
-                chatId,
-                result.message,
-                {
-                    chat_id: chatId,
-                    message_id: loadingMessage.message_id,
-                    disable_notification: true
-                },
-                returnMessage
-            );
-
-            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
-
-            return returnMessage ? result.message : undefined;
-        }
-
-        const meetupMessage = await formatMeetupsMessage(result.events, timeFrame);
-
-        if (returnMessage) {
-            return meetupMessage;
-        }
+        const meetupMessage = await fetchMeetupsLogic(bot, chatId, timeFrame);
 
         const sentMessage = await editAndStoreMessage(
             bot,
@@ -117,31 +92,36 @@ const handleMeetupsFilter = async (bot, msg, timeFrame, returnMessage = "lastMee
                 disable_web_page_preview: true,
                 disable_notification: true,
             },
-            returnMessage        
+            returnMessage
         );
 
-        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
-    } catch (error) {
-        console.error('Error in handleMeetupsFilter:', error);
-        const errorMessage = 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.';
-
-        if (returnMessage) {
-            return errorMessage;
+        if (returnMessage === 'lastMeetupMessageId') {
+            deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
         }
 
-        const sentMessage = await sendAndStoreMessage(
+        return returnMessage ? meetupMessage : undefined;
+    } catch (error) {
+        console.error('Error in handleMeetupsFilter:', error);
+        const errorMessageText = 'Ein Fehler ist beim Mining der Meetups aufgetreten. Bitte versuche es später erneut.';
+
+        if (returnMessage) {
+            return errorMessageText;
+        }
+
+        const errorMessage = await sendAndStoreMessage(
             bot,
             chatId,
-            errorMessage,
+            errorMessageText,
             {
                 disable_notification: true
             },
             returnMessage
         );
 
-        deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
+        deleteMessageWithTimeout(bot, chatId, errorMessage.message_id);
     }
 };
+
 
 const formatMeetupsMessage = async (allEvents, timeFrame) => {
     let message = `🍻 <b>${getHeaderMessage(timeFrame)}</b> 🍻\n\n`;
@@ -180,7 +160,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 
                 message += `🎉 <b><a href="${eventUrl}">${escapeHTML(title)}</a></b>\n`;
                 if (start) {
-                    message += `🕒 ${formatDate(parseInt(start) * 1000)}`;
+                    message += `🕒 <b>${formatDate(parseInt(start) * 1000)}</b>`;
                     if (end) message += ` - ${formatDate(parseInt(end) * 1000)}`;
                     message += `\n`;
                 }
@@ -218,6 +198,16 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
     return message;
 };
 
+const fetchMeetupsLogic = async (bot, chatId, timeFrame) => {
+    const result = await fetchAndProcessEvents(config, timeFrame);
+
+    if (result.status === 'empty' || result.status === 'noEvents') {
+        return result.message;
+    }
+
+    return await formatMeetupsMessage(result.events, timeFrame);
+};
+
 const getHeaderMessage = (timeFrame) => {
     switch (timeFrame) {
         case 'today':
@@ -236,4 +226,5 @@ export {
     handleMeetupsFilter,
     formatMeetupsMessage,
     getHeaderMessage,
+    fetchMeetupsLogic,
 };

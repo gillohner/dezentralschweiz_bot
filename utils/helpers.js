@@ -75,7 +75,6 @@ const deleteMessage = async (bot, chatId, messageId) => {
 };
 
 const deleteMessageWithTimeout = async (bot, chatId, messageId, timeout = 5 * 60 * 1000) => { // 5 min. default 
-  //TODO: revert to 5 min
   setTimeout(async () => {
     try {
       await bot.deleteMessage(chatId, messageId);

@@ -67,5 +67,5 @@ const filterEventsByTimeFrame = (allEvents, timeFrame) => {
 };
 
 export {
-  fetchAndProcessEvents
+  fetchAndProcessEvents,
 };
