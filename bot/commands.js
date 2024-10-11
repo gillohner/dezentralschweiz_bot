@@ -1,4 +1,5 @@
-const commands = [{
+const commands = [
+    {
         command: 'start',
         description: 'Starte den Bot'
     },
