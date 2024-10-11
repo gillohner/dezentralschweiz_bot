@@ -7,7 +7,6 @@ import {
     escapeHTML
 } from '../../utils/helpers.js'
 import {
-    fetchCalendarEvents,
     checkForDeletionEvent
 } from '../../utils/nostrUtils.js';
 import {
@@ -22,30 +21,18 @@ import {
 import {
     fetchAndProcessEvents
 } from "../../utils/eventUtils.js";
+import { getTimeFrameName, getCallbackData } from '../../utils/timeFrameUtils.js';
 import url from 'url';
 
 
 const handleMeetups = async (bot, msg) => {
     const chatId = msg.chat.id;
+    const timeFrames = ['heute', 'dieseWoche', '7Tage', '30Tage', 'alle'];
     const keyboard = {
-        inline_keyboard: [
-            [{
-                text: 'Heute',
-                callback_data: 'meetups_today'
-            }],
-            [{
-                text: 'Diese Woche',
-                callback_data: 'meetups_week'
-            }],
-            [{
-                text: 'Diesen Monat',
-                callback_data: 'meetups_month'
-            }],
-            [{
-                text: 'Alle',
-                callback_data: 'meetups_all'
-            }]
-        ]
+        inline_keyboard: timeFrames.map(timeFrame => [{
+            text: getTimeFrameName(timeFrame),
+            callback_data: getCallbackData(timeFrame)
+        }])
     };
 
     // Delete the user's /meetup command message
@@ -54,7 +41,7 @@ const handleMeetups = async (bot, msg) => {
     // Delete previous meetup message
     if (userStates[chatId]?.lastMeetupMessageId) {
         deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
-    };
+    }
     const sentMessage = await sendAndStoreMessage(
         bot,
         chatId,
@@ -79,7 +66,7 @@ const handleMeetupsFilter = async (bot, msg, timeFrame, returnMessage = "lastMee
             disable_notification: true
         });
 
-        const meetupMessage = await fetchMeetupsLogic(bot, chatId, timeFrame);
+        const meetupMessage = await fetchMeetupsLogic(timeFrame);
 
         const sentMessage = await editAndStoreMessage(
             bot,
@@ -198,7 +185,7 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
     return message;
 };
 
-const fetchMeetupsLogic = async (bot, chatId, timeFrame) => {
+const fetchMeetupsLogic = async (timeFrame) => {
     const result = await fetchAndProcessEvents(config, timeFrame);
 
     if (result.status === 'empty' || result.status === 'noEvents') {
@@ -210,12 +197,14 @@ const fetchMeetupsLogic = async (bot, chatId, timeFrame) => {
 
 const getHeaderMessage = (timeFrame) => {
     switch (timeFrame) {
-        case 'today':
+        case 'heute':
             return 'Meetups heute';
-        case 'week':
+        case 'dieseWoche':
             return 'Meetups diese Woche';
-        case 'month':
-            return 'Meetups diesen Monat';
+        case '7Tage':
+            return 'Meetups in den nächsten 7 Tagen';
+        case '30Tage':
+            return 'Meetups in den nächsten 30 Tagen';
         default:
             return 'Alle bevorstehenden Meetups';
     }

@@ -28,7 +28,7 @@ const postWeeklyMeetups = async (bot) => {
             await deleteMessage(bot, chatId, pinnedMessageId);
         }
 
-        const meetupMessage = await fetchMeetupsLogic(bot, chatId, 'week');
+        const meetupMessage = await fetchMeetupsLogic('dieseWoche');
 
         if (meetupMessage) {
             let sentMessage = await sendAndStoreMessage(bot, chatId, meetupMessage, {
@@ -37,7 +37,7 @@ const postWeeklyMeetups = async (bot) => {
             }, 'pinnedMeetupMessageId');
 
             await bot.pinChatMessage(chatId, sentMessage.message_id);
-        }
+        } 
     } catch (error) {
         console.error('Error posting weekly meetups:', error);
     }
