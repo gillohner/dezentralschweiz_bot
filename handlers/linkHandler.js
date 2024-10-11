@@ -35,9 +35,9 @@ const handleLinks = async (bot, msg, communityLinks) => {
         bot,
         chatId,
         'Wähle eine Kategorie:', {
-            reply_markup: JSON.stringify(keyboard),
-            disable_notification: true
-        },
+        reply_markup: JSON.stringify(keyboard),
+        disable_notification: true
+    },
         'lastLinksMessageId'
     );
 
@@ -50,16 +50,11 @@ const handleLinksCallback = async (bot, callbackQuery) => {
     const chatId = msg.chat.id;
 
     if (action === 'links_cancel') {
-        // Handle cancel action
-        await bot.answerCallbackQuery(callbackQuery.id, {
-            text: 'Aktion abgebrochen'
-        });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: 'Aktion abgebrochen' });
         try {
-            // Delete the selection message
             deleteMessage(bot, chatId, msg.message_id);
             delete userStates[chatId].lastLinksMessageId;
 
-            // Delete the last category message if it exists
             if (userStates[chatId]?.lastLinksCategoryMessageId) {
                 deleteMessage(bot, chatId, userStates[chatId].lastLinksCategoryMessageId);
                 delete userStates[chatId].lastLinksCategoryMessageId;
@@ -71,13 +66,17 @@ const handleLinksCallback = async (bot, callbackQuery) => {
         const category = action.split('_')[1];
         const links = communityLinks[category];
         let message = `<b>${category}:\n\n</b>`;
+
         links.forEach(link => {
-            message += `${link.name}\n${link.url}\n\n`;
+            let groupName = link.name;
+            if (link.id && link.id === chatId.toString()) {
+                groupName += ' (diese Gruppe)';
+            }
+            message += `${groupName}\n${link.url}\n\n`;
         });
 
         await bot.answerCallbackQuery(callbackQuery.id);
 
-        // Delete the previous category message if it exists
         if (userStates[chatId]?.lastLinksCategoryMessageId) {
             deleteMessage(bot, chatId, userStates[chatId].lastLinksCategoryMessageId);
         }
@@ -86,10 +85,10 @@ const handleLinksCallback = async (bot, callbackQuery) => {
             bot,
             chatId,
             message, {
-                parse_mode: 'HTML',
-                disable_web_page_preview: true,
-                disable_notification: true
-            },
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            disable_notification: true
+        },
             'lastLinksCategoryMessageId'
         );
 
