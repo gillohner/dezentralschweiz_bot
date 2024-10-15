@@ -159,6 +159,10 @@ const communityLinks = {
       url: 'https://pocketbitcoin.com/'
     },
     {
+      name: 'BitBox',
+      url: 'https://bitbox.swiss/dezentralschweiz'
+    },
+    {
       name: 'Bitagent',
       url: 'http://bitagent.ch/'
     },
