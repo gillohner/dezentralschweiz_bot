@@ -24,6 +24,20 @@ const handleMessage = (bot, msg) => {
         // Check for trigger words in group chats
         const text = msg.text ? msg.text.toLowerCase() : "";
 
+        // Check for Twitter or X links and convert them
+        const twitterRegex = /(https?:\/\/(www\.)?(twitter\.com|x\.com)\/[\w\d_/.-]+)(\?[^\s]*)?/gi;
+        const convertedText = text.replace(twitterRegex, (match, p1) => {
+            return p1.replace(/(twitter\.com|x\.com)/, 'nitter.poast.org');
+        });
+
+        if (convertedText !== text) {
+            bot.sendMessage(msg.chat.id, convertedText, {
+                disable_web_page_preview: true,
+                disable_notification: true
+            });
+            return; // Exit the function to avoid further processing
+        }
+
         // Check for Ethereum trigger words
         const isEthereum = ethereumTriggerWords.some(word => {
             const match = new RegExp(`\\b${word}\\b`).test(text);
