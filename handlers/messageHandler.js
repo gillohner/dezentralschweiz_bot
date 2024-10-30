@@ -26,16 +26,15 @@ const handleMessage = (bot, msg) => {
 
         // Check for Twitter or X links and convert them
         const twitterRegex = /(https?:\/\/(www\.)?(twitter\.com|x\.com)\/[\w\d_/.-]+)(\?[^\s]*)?/gi;
-        const convertedText = text.replace(twitterRegex, (match, p1) => {
-            return p1.replace(/(twitter\.com|x\.com)/, 'nitter.poast.org');
-        });
-
-        if (convertedText !== text) {
-            bot.sendMessage(msg.chat.id, convertedText, {
+        let match;
+        while ((match = twitterRegex.exec(text)) !== null) {
+            const originalUrl = match[1];
+            const convertedUrl = originalUrl.replace(/(twitter\.com|x\.com)/, 'nitter.poast.org');
+            
+            bot.sendMessage(msg.chat.id, convertedUrl, {
                 disable_web_page_preview: true,
                 disable_notification: true
             });
-            return; // Exit the function to avoid further processing
         }
 
         // Check for Ethereum trigger words
