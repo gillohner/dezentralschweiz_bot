@@ -191,7 +191,11 @@ const communityLinks = {
     {
       name: 'Funtoshi ♟️',
       url: 'https://funtoshi.com/'
-    }
+    },
+    {
+      name: 'Yourdevice',
+      url: 'https://yourdevice.ch/'
+    },    
   ]
 };
 
