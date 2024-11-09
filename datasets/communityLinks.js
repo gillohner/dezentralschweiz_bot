@@ -194,7 +194,7 @@ const communityLinks = {
     },
     {
       name: 'Yourdevice',
-      url: 'https://yourdevice.ch/'
+      url: 'https://yourdevice.c/'
     },    
   ]
 };
