@@ -109,6 +109,10 @@ const communityLinks = {
       url: 'https://news.berglinde.com/'
     },
     {
+      name: 'Berglinde Podcast',
+      url: 'https://www.fountain.fm/show/aed4vKr0mXzHSbXxOOmB'
+    },
+    {
       name: 'Bitpartikel Blog',
       url: 'https://bitpartikel.com/cryptonite/'
     }
