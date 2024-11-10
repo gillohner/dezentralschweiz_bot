@@ -2,15 +2,18 @@ const communityLinks = {
   'Dezentralschweiz Gruppen': [
     {
       name: 'Bitcoin Gruppe 💬',
-      url: 'https://t.me/+iu9fNXw0NeE4ZmE0'
+      url: 'https://t.me/+iu9fNXw0NeE4ZmE0',
+      id: '-1001759384231'
     },
     {
       name: 'Meetup Gruppe 🍻',
-      url: 'https://t.me/+XEWwvUPaxPBlZjM0'
+      url: 'https://t.me/+XEWwvUPaxPBlZjM0',
+      id: '-1001284407897'
     },
     {
       name: 'Offtopic Gruppe 👀',
-      url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh'
+      url: 'https://t.me/joinchat/NL5C5XuMSwczMzJh',
+      id: '-1001750710633'
     },
     {
       name: 'Dezentralschweiz Backup 🔐 (P2P)',
@@ -19,20 +22,22 @@ const communityLinks = {
   ],
   'Regionale Gruppen': [
     {
-      name: "Bitcoin Alps",
-      url: "https://t.me/bitcoin_alps"
+      name: 'Bitcoin Alps',
+      url: 'https://t.me/bitcoin_alps'
     },
     {
-      name: "Bitcoin Baden",
-      url: "https://bitcoinbaden.ch/"
+      name: 'Bitcoin Baden',
+      url: 'https://bitcoinbaden.ch/'
     },   
     {
-      name: "Einundzwanzig Meetup Ostschweiz",
-      url: "https://t.me/+dl7U3c1THKE2ODhk"
+      name: 'Einundzwanzig Meetup Ostschweiz',
+      url: 'https://t.me/+dl7U3c1THKE2ODhk',
+      id: '-1001737615727'
     },
     {
       name: 'Bitcoin Luzern',
-      url: 'https://t.me/bitcoinluzern'
+      url: 'https://t.me/bitcoinluzern',
+      id: '-1001886830711'
     },
     {
       name: '21⚡️BITCOIN WINTI',
@@ -40,23 +45,26 @@ const communityLinks = {
     },
     {
       name: 'Einundzwanzig Meetup Einsiedeln',
-      url: 'https://t.me/+sdT8TNEJIMc2Y2U8'
+      url: 'https://t.me/+sdT8TNEJIMc2Y2U8',
+      id: '-1001885048851'
     },
     {
-      name: "	Einezwänzg Solothurn",
-      url: "https://t.me/+BPb0b8yHLbM4NTY5"
+      name: '	Einezwänzg Solothurn',
+      url: 'https://t.me/+BPb0b8yHLbM4NTY5',
+      id: '-1001965341056'
     },
     {
-      name: "Einundzwanzig Basel",
-      url: "https://t.me/+LWtqciNZDiNmNTFk"
+      name: 'Einundzwanzig Basel',
+      url: 'https://t.me/+LWtqciNZDiNmNTFk'
     },
     {
-      name: "Einundzwanzig Thurgau",
-      url: "https://t.me/Einundzwanzig_Thurgau"
+      name: 'Einundzwanzig Thurgau',
+      url: 'https://t.me/Einundzwanzig_Thurgau',
+      id: '-1001817663515'
     },
     {
-      name: "Bitcoin Weesen SG",
-      url: "https://www.bitcoinweesen.ch"
+      name: 'Bitcoin Weesen SG',
+      url: 'https://www.bitcoinweesen.ch'
     }
   ],
   'Info Gruppen': [
@@ -101,6 +109,10 @@ const communityLinks = {
       url: 'https://news.berglinde.com/'
     },
     {
+      name: 'Berglinde Podcast',
+      url: 'https://www.fountain.fm/show/aed4vKr0mXzHSbXxOOmB'
+    },
+    {
       name: 'Bitpartikel Blog',
       url: 'https://bitpartikel.com/cryptonite/'
     }
@@ -115,16 +127,16 @@ const communityLinks = {
       url: 'https://www.bitcoin-mentoring.me'
     },
     {
-      name: "Bitcoin Block",
-      url: "https://bitcoinblock.study/"
+      name: '21Lectures',
+      url: 'https://21lectures.com/partner/dezentralschweiz/'
     },
     {
-      name: "21 Lessons",
-      url: "https://21lessons.com/"
+      name: 'Bitcoin Block',
+      url: 'https://bitcoinblock.study/'
     },
     {
-      name: "House of Satoshi",
-      url: "https://www.house-of-satoshi.ch/"
+      name: 'House of Satoshi',
+      url: 'https://www.house-of-satoshi.ch/'
     }
   ],
   'Vereine': [
@@ -151,6 +163,10 @@ const communityLinks = {
       url: 'https://pocketbitcoin.com/'
     },
     {
+      name: 'BitBox',
+      url: 'https://bitbox.swiss/dezentralschweiz'
+    },
+    {
       name: 'Bitagent',
       url: 'http://bitagent.ch/'
     },
@@ -161,6 +177,10 @@ const communityLinks = {
     {
       name: 'Bittr',
       url: 'https://getbittr.com/'
+    },
+    {
+      name: 'ZeusATM',
+      url: 'https://zeusatm.ch/'
     }
   ],
   'Shops': [
@@ -175,7 +195,11 @@ const communityLinks = {
     {
       name: 'Funtoshi ♟️',
       url: 'https://funtoshi.com/'
-    }
+    },
+    {
+      name: 'Yourdevice',
+      url: 'https://yourdevice.ch/'
+    },    
   ]
 };
 

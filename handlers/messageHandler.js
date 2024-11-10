@@ -21,13 +21,41 @@ const handleMessage = (bot, msg) => {
             handleEventCreationStep(bot, msg);
         }
     } else {
-        // Check for trigger words in group chats
-        const text = msg.text ? msg.text.toLowerCase() : "";
+        const text = msg.text || "";
+
+        // Check for Twitter or X links and convert them
+        const twitterRegex = /(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/[\w\d_/.-]+(?:\?[^\s]*)?/gi;
+        let match;
+        while ((match = twitterRegex.exec(text)) !== null) {
+            const originalUrl = match[0];
+            const convertedUrl = originalUrl.replace(/^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)/, 'https://nitter.poast.org');
+
+            bot.sendMessage(msg.chat.id, convertedUrl.split('?')[0], {
+                disable_web_page_preview: true,
+                disable_notification: true
+            });
+        }
+
+        // Check for any URL and sanitize
+        const urlRegex = /(https?:\/\/[^\s]+)/gi;
+        let urlMatch;
+        while ((urlMatch = urlRegex.exec(text)) !== null) {
+            const originalUrl = urlMatch[0];
+            const sanitizedUrl = originalUrl.split('?')[0];
+
+            if (sanitizedUrl !== originalUrl) {
+                bot.sendMessage(msg.chat.id, sanitizedUrl, {
+                    disable_web_page_preview: true,
+                    disable_notification: true
+                });
+            }
+        }
+
+        const lowerText = text.toLowerCase();
 
         // Check for Ethereum trigger words
         const isEthereum = ethereumTriggerWords.some(word => {
-            const match = new RegExp(`\\b${word}\\b`).test(text);
-            return match;
+            return new RegExp(`\\b${word}\\b`).test(lowerText);
         });
 
         if (isEthereum) {
@@ -41,7 +69,7 @@ const handleMessage = (bot, msg) => {
         // Check for other shitcoin trigger words
         let matchedShitcoin = '';
         const isShitcoin = shitcoinTriggerWords.some(word => {
-            const match = new RegExp(`\\b${word}\\b`).test(text);
+            const match = new RegExp(`\\b${word}\\b`).test(lowerText);
             if (match) {
                 matchedShitcoin = word;
             }
