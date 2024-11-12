@@ -17,6 +17,7 @@
     "node-schedule": "^2.1.1",
     "node-telegram-bot-api": "^0.66.0",
     "nostr-tools": "^2.7.2",
+    "tidy-url": "^1.18.3",
     "ws": "^8.18.0"
   },
   "description": "",
