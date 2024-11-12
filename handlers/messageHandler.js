@@ -11,6 +11,7 @@ import {
 import {
     handleEventCreationStep
 } from './meetupHandlers/meetupSuggestionHandler.js';
+import { TidyURL } from 'tidy-url';
 
 const handleMessage = (bot, msg) => {
     if (msg.chat.type === 'private') {
@@ -23,34 +24,50 @@ const handleMessage = (bot, msg) => {
     } else {
         const text = msg.text || "";
 
-        // Check for Twitter or X links and convert them
-        const twitterRegex = /(?:https?:\/\/)?(?:www\.)?(twitter\.com|x\.com)\/[\w\d_/.-]+(?:\?[^\s]*)?/gi;
-        let match;
-        while ((match = twitterRegex.exec(text)) !== null) {
-            const originalUrl = match[0];
-            const convertedUrl = originalUrl.replace(/^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)/, 'https://nitter.poast.org');
+        // Comprehensive regex to match URLs
+        const urlRegex = /(?:(?:https?:\/\/)?(?:www\.)?)?[a-z0-9]+(?:[-.][a-z0-9]+)*\.[a-z]{2,}(?::[0-9]{1,5})?(?:\/[^\s]*)?/gi;
 
-            bot.sendMessage(msg.chat.id, convertedUrl.split('?')[0], {
+        let match;
+        let cleanedUrls = [];
+        let twitterUrls = [];
+
+        while ((match = urlRegex.exec(text)) !== null) {
+            let originalUrl = match[0];
+            if (!originalUrl.startsWith('http')) {
+                originalUrl = 'https://' + originalUrl;
+            }
+
+            const cleanedUrl = TidyURL.clean(originalUrl).url;
+
+            if (cleanedUrl !== originalUrl) {
+                cleanedUrls.push(`${cleanedUrl}`);
+            }
+
+            if (originalUrl.includes('twitter.com') || originalUrl.includes('x.com')) {
+                const nitterUrl = cleanedUrl.replace(/^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)/, 'https://nitter.poast.org');
+                twitterUrls.push(`${cleanedUrl} -> ${nitterUrl}`);
+            }
+        }
+
+        // Send cleaned URLs
+        if (cleanedUrls.length > 0) {
+            const message = "NO-KYC Urls:\n" + cleanedUrls.join('\n');
+            bot.sendMessage(msg.chat.id, message, {
                 disable_web_page_preview: true,
                 disable_notification: true
             });
         }
 
-        // Check for any URL and sanitize
-        const urlRegex = /(https?:\/\/[^\s]+)/gi;
-        let urlMatch;
-        while ((urlMatch = urlRegex.exec(text)) !== null) {
-            const originalUrl = urlMatch[0];
-            const sanitizedUrl = originalUrl.split('?')[0];
-
-            if (sanitizedUrl !== originalUrl) {
-                bot.sendMessage(msg.chat.id, sanitizedUrl, {
-                    disable_web_page_preview: true,
-                    disable_notification: true
-                });
-            }
+        // Send Twitter/X URLs with Nitter alternatives
+        if (twitterUrls.length > 0) {
+            const message = "X sucks:\n" + twitterUrls.join('\n');
+            bot.sendMessage(msg.chat.id, message, {
+                disable_web_page_preview: true,
+                disable_notification: true
+            });
         }
 
+        // Rest of your existing code for Ethereum and shitcoin checks
         const lowerText = text.toLowerCase();
 
         // Check for Ethereum trigger words
