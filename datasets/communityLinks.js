@@ -93,7 +93,11 @@ const communityLinks = {
     {
       name: 'Bitcoin Chalet in Oberiberg (SZ)',
       url: 'https://x.com/Bitcoin_Chalet'
-    }
+    },
+    {
+      name: 'Schweizer Solo Mining Pool',
+      url: 'https://blitzpool.yourdevice.ch'
+    }    
   ],
   'Online Content': [
     {
