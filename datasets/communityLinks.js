@@ -18,15 +18,7 @@ const communityLinks = {
     {
       name: 'Dezentralschweiz Backup 🔐 (P2P)',
       url: 'Download Keet.io and DM @Nicolas_B58'
-    },
-    {
-      name: 'Dezentralschweiz Website',
-      url: 'https://dezentralschweiz.ch'
-    },
-    {
-      name: 'Dezentralschweiz Blog',
-      url: 'https://dezentralschweiz.ch/blog/'
-    {
+    }
   ],
   'Regionale Gruppen': [
     {
@@ -127,6 +119,10 @@ const communityLinks = {
     {
       name: 'Bitpartikel Blog',
       url: 'https://bitpartikel.com/cryptonite/'
+    },
+    {
+      name: 'Dezentralschweiz Blog',
+      url: 'https://dezentralschweiz.ch/blog/'
     }
   ],
   'Education': [
