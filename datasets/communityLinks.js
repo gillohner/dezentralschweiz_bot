@@ -123,6 +123,10 @@ const communityLinks = {
     {
       name: 'Dezentralschweiz Blog',
       url: 'https://dezentralschweiz.ch/blog/'
+    },
+    {
+      name: 'Cercatrova`s Blog',
+      url: 'https://cercatrova.blog'
     }
   ],
   'Education': [
