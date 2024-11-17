@@ -121,6 +121,10 @@ const communityLinks = {
       url: 'https://bitpartikel.com/cryptonite/'
     },
     {
+      name: 'Dezentralschweiz Blog',
+      url: 'https://dezentralschweiz.ch/blog/'
+    },
+    {
       name: 'Cercatrova`s Blog',
       url: 'https://cercatrova.blog'
     }
