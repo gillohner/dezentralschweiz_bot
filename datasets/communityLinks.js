@@ -119,6 +119,10 @@ const communityLinks = {
     {
       name: 'Bitpartikel Blog',
       url: 'https://bitpartikel.com/cryptonite/'
+    },
+    {
+      name: 'Cercatrova`s Blog',
+      url: 'https://cercatrova.blog'
     }
   ],
   'Education': [
