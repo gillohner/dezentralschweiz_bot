@@ -44,7 +44,7 @@ Wir führen des Weiteren noch eine Bitcoin, sowie eine Offtopic Gruppe.
 
 Benutze /links um verschiedene Gruppen und andere Community-Ressourcen zu finden.`
  },
-  '-1001913859065': {
+ '-1001913859065': {
     title: "21 ⚡️ BITCOIN WINTI",
     welcomeMessage: `<b>Willkommen in der 21 ⚡️ BITCOIN WINTI Gruppe! </b>
 
