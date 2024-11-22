@@ -57,4 +57,4 @@ To set up the Dezentralschweiz Bot, follow these steps:
 Contributions to the Dezentralschweiz Bot are welcome! Please feel free to submit pull requests or open issues for any improvements or bug fixes.
 
 ## License
-Intelectual property is a joke. Do whatever the fuck you want with this.
+GPL 3.0
