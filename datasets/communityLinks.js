@@ -149,6 +149,10 @@ const communityLinks = {
     {
       name: 'House of Satoshi',
       url: 'https://www.house-of-satoshi.ch/'
+    },
+    {
+      name: 'Satoshee',
+      url: 'https://satoshe.space/
     }
   ],
   'Vereine': [
