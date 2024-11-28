@@ -152,7 +152,7 @@ const communityLinks = {
     },
     {
       name: 'Satoshee',
-      url: 'https://satoshe.space/
+      url: 'https://satoshe.space/'
     }
   ],
   'Vereine': [
