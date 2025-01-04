@@ -65,6 +65,10 @@ const communityLinks = {
     {
       name: 'Bitcoin Weesen SG',
       url: 'https://www.bitcoinweesen.ch'
+    },
+    {
+      name: 'Bitcoin Oberwallis',
+      url: 'DM Dan auf Threema ID:Y64Z59ZW'
     }
   ],
   'Info Gruppen': [
