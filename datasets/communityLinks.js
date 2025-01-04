@@ -68,7 +68,7 @@ const communityLinks = {
     },
     {
       name: 'Bitcoin Oberwallis',
-      url: DM Dan auf Threema ID:Y64Z59ZW'
+      url: 'DM Dan auf Threema ID:Y64Z59ZW'
     }
   ],
   'Info Gruppen': [
