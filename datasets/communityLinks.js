@@ -69,6 +69,10 @@ const communityLinks = {
     {
       name: 'Bitcoin Oberwallis',
       url: 'DM Dan auf Threema ID:Y64Z59ZW'
+    },
+    {
+      name: 'Einundzwanzig Seeland',
+      url: 'https://t.me/Einundzwanzig_Seeland'
     }
   ],
   'Info Gruppen': [
