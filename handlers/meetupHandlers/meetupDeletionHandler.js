@@ -41,11 +41,25 @@ const initiateEventDeletion = (bot, msg) => {
     });
 };
 
+const pendingApprovals = {};
+
 const handleAdminMeetupDeletionApproval = async (bot, callbackQuery) => {
     const action = callbackQuery.data;
     const adminChatId = callbackQuery.message.chat.id;
     const userChatId = action.split('_')[2];
     const isApproved = action.startsWith('approve_delete_');
+
+    // Check if this approval has already been handled
+    if (pendingApprovals[userChatId]) {
+        bot.answerCallbackQuery(callbackQuery.id, {
+            text: 'Diese Anfrage wurde bereits bearbeitet.'
+        });
+        return;
+    }
+
+    // Mark as handled immediately
+    pendingApprovals[userChatId] = true;
+    deleteMessage(bot, adminChatId, callbackQuery.message.message_id);
 
     console.log(`Event deletion ${isApproved ? 'approved' : 'rejected'} for user ${userChatId}`);
 
@@ -65,9 +79,10 @@ const handleAdminMeetupDeletionApproval = async (bot, callbackQuery) => {
     bot.answerCallbackQuery(callbackQuery.id, {
         text: isApproved ? 'Löschung genehmigt' : 'Löschung abgelehnt'
     });
-    deleteMessage(bot, adminChatId, callbackQuery.message.message_id);
-}
 
+    // Mark as handled
+    pendingApprovals[userChatId] = true;
+};
 
 const handleDeletionConfirmation = async (bot, query, eventToDelete) => {
     const privateKey = config.BOT_NSEC;
