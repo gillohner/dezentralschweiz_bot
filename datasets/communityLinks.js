@@ -65,6 +65,14 @@ const communityLinks = {
     {
       name: 'Bitcoin Weesen SG',
       url: 'https://www.bitcoinweesen.ch'
+    },
+    {
+      name: 'Bitcoin Oberwallis',
+      url: 'DM Dan auf Threema ID:Y64Z59ZW'
+    },
+    {
+      name: 'Einundzwanzig Seeland',
+      url: 'https://t.me/Einundzwanzig_Seeland'
     }
   ],
   'Info Gruppen': [
@@ -119,6 +127,14 @@ const communityLinks = {
     {
       name: 'Bitpartikel Blog',
       url: 'https://bitpartikel.com/cryptonite/'
+    },
+    {
+      name: 'Dezentralschweiz Blog',
+      url: 'https://dezentralschweiz.ch/blog/'
+    },
+    {
+      name: 'Cercatrova`s Blog',
+      url: 'https://cercatrova.blog'
     }
   ],
   'Education': [
@@ -141,6 +157,10 @@ const communityLinks = {
     {
       name: 'House of Satoshi',
       url: 'https://www.house-of-satoshi.ch/'
+    },
+    {
+      name: 'Satoshee',
+      url: 'https://satoshe.space/'
     }
   ],
   'Vereine': [
