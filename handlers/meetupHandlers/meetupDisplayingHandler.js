@@ -140,7 +140,7 @@ const formatMeetupsMessage = async (calendar, timeFrame) => {
       message += `🎉 <b><a href="${event.metadata.meetstrUrl}">${escapeHTML(
         title
       )}</a></b>\n`;
-      message += `🕒 **${formatDate(parseInt(start) * 1000)}**`;
+      message += `🕒 ${formatDate(parseInt(start) * 1000)}`;
       if (end) {
         message += ` - ${formatDate(parseInt(end) * 1000)}`;
       }
