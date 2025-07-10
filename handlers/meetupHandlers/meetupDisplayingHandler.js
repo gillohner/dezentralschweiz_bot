@@ -1,3 +1,5 @@
+// handlers/meetupHandlers/meetupDisplayingHandler.js
+
 import userStates from "../../userStates.js";
 import config from "../../bot/config.js";
 import {
@@ -5,9 +7,7 @@ import {
   formatLocation,
   formatDate,
   escapeHTML,
-  extractMapLinks,
 } from "../../utils/helpers.js";
-import { checkForDeletionEvent } from "../../utils/nostrUtils.js";
 import { nip19 } from "nostr-tools";
 import {
   deleteMessageWithTimeout,
@@ -15,12 +15,11 @@ import {
   deleteMessage,
   editAndStoreMessage,
 } from "../../utils/helpers.js";
-import { fetchAndProcessEvents } from "../../utils/eventUtils.js";
+import { fetchMeetupsFromAPI } from "../../utils/apiCalendar.js";
 import {
   getTimeFrameName,
   getCallbackData,
 } from "../../utils/timeFrameUtils.js";
-import url from "url";
 
 const handleMeetups = async (bot, msg) => {
   const chatId = msg.chat.id;
@@ -37,10 +36,6 @@ const handleMeetups = async (bot, msg) => {
   // Delete the user's /meetup command message
   deleteMessage(bot, chatId, msg.message_id);
 
-  // Delete previous meetup message
-  if (userStates[chatId]?.lastMeetupMessageId) {
-    deleteMessage(bot, chatId, userStates[chatId].lastMeetupMessageId);
-  }
   const sentMessage = await sendAndStoreMessage(
     bot,
     chatId,
@@ -51,6 +46,7 @@ const handleMeetups = async (bot, msg) => {
     },
     "lastMeetupMessageId"
   );
+
   deleteMessageWithTimeout(bot, chatId, sentMessage.message_id);
 };
 
@@ -119,73 +115,48 @@ const handleMeetupsFilter = async (
   }
 };
 
-const formatMeetupsMessage = async (allEvents, timeFrame) => {
-  let message = `🍻 <b>${getHeaderMessage(timeFrame)}</b> 🍻\n\n`;
+const formatMeetupsMessage = async (calendar, timeFrame) => {
+  const events = calendar.upcoming;
+  console.log(events);
+  console.log(calendar);
+  let message = `🍻 **${getHeaderMessage(timeFrame)}** 🍻\n\n`;
 
-  for (const { calendarName, events, naddr } of allEvents) {
-    if (events.length > 0) {
-      const calendarUrl = `https://dezentralbot.riginode.xyz/calendar/${naddr}`;
-      message += `<b>📅 <a href="${calendarUrl}">${escapeHTML(
-        calendarName
-      )}</a></b>\n\n`;
+  if (events.length > 0) {
+    message += `<b>📅 <a href="${calendar.meetstrUrl}">${escapeHTML(
+      calendar.metadata.title
+    )}</a></b>\n\n`;
 
-      for (let i = 0; i < events.length; i++) {
-        const event = events[i];
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
 
-        if (await checkForDeletionEvent(event.id)) continue;
+      const title = event.metadata.title;
+      if (!title) continue;
 
-        const title =
-          event.tags.find((t) => t[0] === "name")?.[1] ||
-          event.tags.find((t) => t[0] === "title")?.[1];
-        if (!title) continue;
+      const start = event.metadata.start;
+      if (!start) continue;
 
-        const start = event.tags.find((t) => t[0] === "start")?.[1];
-        if (!start) continue;
+      const end = event.metadata.end;
 
-        const end = event.tags.find((t) => t[0] === "end")?.[1];
+      message += `🎉 <b><a href="${event.metadata.meetstrUrl}">${escapeHTML(
+        title
+      )}</a></b>\n`;
+      message += `🕒 **${formatDate(parseInt(start) * 1000)}**`;
+      if (end) {
+        message += ` - ${formatDate(parseInt(end) * 1000)}`;
+      }
+      message += `\n`;
 
-        const locationTag = event.tags.find((t) => t[0] === "location");
-        const location = locationTag ? locationTag[1] : null;
-        const { googleMapsLink, osmLink, appleMapsLink } = extractMapLinks(
-          event.tags
-        );
-        console.log(event.tags);
-        console.log("Google Maps Link:", googleMapsLink);
-        console.log("OSM Link:", osmLink);
-        console.log("Apple Maps Link:", appleMapsLink);
+      const telegramUser = extractTelegramUsername(event.metadata.references);
+      if (telegramUser) {
+        message += `👤 ${escapeHTML(telegramUser)}\n`;
+      }
 
-        const eventNaddr = nip19.naddrEncode({
-          kind: event.kind,
-          pubkey: event.pubkey,
-          identifier: event.tags.find((t) => t[0] === "d")?.[1] || "",
-        });
-        const eventUrl = `https://dezentralbot.riginode.xyz/event/${eventNaddr}`;
+      if (event) {
+        message += await formatLocation(event);
+      }
 
-        message += `🎉 <b><a href="${eventUrl}">${escapeHTML(title)}</a></b>\n`;
-        if (start) {
-          message += `🕒 <b>${formatDate(parseInt(start) * 1000)}</b>`;
-          if (end) message += ` - ${formatDate(parseInt(end) * 1000)}`;
-          message += `\n`;
-        }
-
-        const telegramUser = extractTelegramUsername(event.tags);
-        if (telegramUser) {
-          message += `👤 ${escapeHTML(telegramUser)}\n`;
-        }
-
-        if (location) {
-          message += await formatLocation(
-            location,
-            googleMapsLink,
-            osmLink,
-            appleMapsLink
-          );
-        }
-
-        // Add separator only if this is not the last event
-        if (i < events.length - 1) {
-          message += "\n🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶\n\n";
-        }
+      if (i < events.length - 1) {
+        message += "\n🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶\n\n";
       }
     }
   }
@@ -194,13 +165,44 @@ const formatMeetupsMessage = async (allEvents, timeFrame) => {
 };
 
 const fetchMeetupsLogic = async (timeFrame) => {
-  const result = await fetchAndProcessEvents(config, timeFrame);
+  const now = new Date();
+  let fromDate = now;
+  let toDate = new Date(now);
 
-  if (result.status === "empty" || result.status === "noEvents") {
-    return result.message;
+  switch (timeFrame) {
+    case "heute":
+      break;
+    case "dieseWoche":
+      toDate.setDate(now.getDate() + (7 - now.getDay()));
+      break;
+    case "7Tage":
+      toDate.setDate(now.getDate() + 7);
+      break;
+    case "30Tage":
+      toDate.setDate(now.getDate() + 30);
+      break;
+    case "alle":
+      toDate.setFullYear(now.getFullYear() + 1);
+      break;
+    default:
+      toDate.setFullYear(now.getFullYear() + 1);
   }
 
-  return await formatMeetupsMessage(result.events, timeFrame);
+  const from = fromDate.toISOString().slice(0, 10);
+  const to = toDate.toISOString().slice(0, 10);
+
+  const calendar = await fetchMeetupsFromAPI(from, to);
+  const events = calendar.upcoming;
+  console.log(
+    `Fetched ${events.length} events from API for time frame: ${timeFrame}`
+  );
+  if (!events.length) {
+    return `Keine Meetups für den gewählten Zeitraum (${getHeaderMessage(
+      timeFrame
+    )}) gefunden.`;
+  }
+
+  return await formatMeetupsMessage(calendar, timeFrame);
 };
 
 const getHeaderMessage = (timeFrame) => {
