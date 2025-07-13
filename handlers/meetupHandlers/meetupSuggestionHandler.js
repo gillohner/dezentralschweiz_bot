@@ -28,6 +28,7 @@ const handleMeetupSuggestion = (bot, msg) => {
     return;
   }
   const chatId = msg.chat.id;
+  userStates[chatId] = null; // Reset user state
   startEventSuggestion(bot, chatId, msg);
 };
 
@@ -108,7 +109,7 @@ const handleEventCreationStep = async (bot, msg) => {
   const { step } = userStates[chatId];
   const text = msg.text;
 
-  if (text.toLowerCase() === "/cancel") {
+  if (text && text.startsWith("/")) {
     return handleCancellation(bot, chatId);
   }
 
