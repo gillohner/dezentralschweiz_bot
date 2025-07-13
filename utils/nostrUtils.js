@@ -195,8 +195,6 @@ const publishEventToNostr = async (eventDetails) => {
     }
 
     const decoded = nip19.decode(calendarNaddr);
-    const calendarPubkey = decoded.data.pubkey;
-    const calendarIdentifier = decoded.data.identifier;
 
     const eventId = crypto.randomBytes(16).toString("hex");
     const startTimestamp = Math.floor(
@@ -205,7 +203,7 @@ const publishEventToNostr = async (eventDetails) => {
     const geohash = ngeohash.encode(
       eventDetails.latitude,
       eventDetails.longitude
-    ); //TODO fix geohash by setting at fetch
+    );
 
     eventTemplate = {
       kind: 31923, // Time-Based Calendar Event
@@ -260,7 +258,6 @@ const publishEventToNostr = async (eventDetails) => {
   }
 
   if (eventTemplate.kind === 31923) {
-    console.log("Trying to update calendar: ", signedEvent);
     await updateCalendarEvent(signedEvent, privateKey);
   }
 
@@ -285,7 +282,6 @@ const publishToRelay = (relay, event) => {
 const updateCalendarEvent = async (newEvent, privateKey) => {
   const calendarId = config.EVENT_CALENDAR_NADDR;
   if (!calendarId) {
-    console.error("EVENT_CALENDAR_NADDR is not set in environment variables");
     return;
   }
 
@@ -294,7 +290,6 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
   console.log("Decoded calendar ID:", decoded);
   const calendarFilter = {
     kinds: [31924],
-    authors: [decoded.data.pubkey],
     "#d": [decoded.data.identifier],
   };
   console.log("Fetching calendar event with filter:", calendarFilter);
@@ -305,7 +300,7 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
     const calendarPubkey = decoded.data.pubkey;
     calendarEvent.pubkey = calendarPubkey;
     const newEventReference = `31923:${newEvent.pubkey}:${
-      newEvent.tags.find((t) => t[0] === "d")[1]
+      newEvent.tags.find((t) => t[0] === "a")[1]
     }`;
     calendarEvent.tags.push(["a", newEventReference]);
     calendarEvent.created_at = Math.floor(Date.now() / 1000);
