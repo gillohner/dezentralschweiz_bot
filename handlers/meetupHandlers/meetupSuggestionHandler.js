@@ -25,6 +25,17 @@ const cleanupOldUserStates = () => {
 // Run cleanup every hour
 setInterval(cleanupOldUserStates, 60 * 60 * 1000);
 
+// Track processed admin actions to prevent duplicate processing
+const processedAdminActions = new Set();
+
+// Clean up old processed actions every hour
+const cleanupProcessedActions = () => {
+  processedAdminActions.clear();
+  console.log("Cleared processed admin actions cache");
+};
+
+setInterval(cleanupProcessedActions, 60 * 60 * 1000);
+
 const handleMeetupSuggestion = (bot, msg) => {
   if (msg.chat.type !== "private") {
     bot.sendMessage(
@@ -56,9 +67,36 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
   const action = callbackQuery.data;
   const userChatId = action.split("_")[2];
   const isApproved = action.startsWith("approve_meetup_");
+  
+  // Create unique action ID to prevent duplicate processing
+  const actionId = `${action}_${userChatId}_${callbackQuery.message.message_id}`;
+  
+  // Check if this action has already been processed
+  if (processedAdminActions.has(actionId)) {
+    bot.answerCallbackQuery(callbackQuery.id, {
+      text: "Diese Aktion wurde bereits verarbeitet!",
+      show_alert: true,
+    });
+    return;
+  }
+  
+  // Mark action as processed immediately
+  processedAdminActions.add(actionId);
+  
   console.log(
     `Event ${isApproved ? "approved" : "rejected"} for user ${userChatId}`
   );
+  
+  // Check if user state still exists (might have been processed already)
+  if (!userStates[userChatId] || !userStates[userChatId].event) {
+    bot.answerCallbackQuery(callbackQuery.id, {
+      text: "Event wurde bereits verarbeitet oder ist nicht mehr verfügbar!",
+      show_alert: true,
+    });
+    deleteMessage(bot, config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
+    return;
+  }
+  
   if (isApproved) {
     const eventDetails = userStates[userChatId]?.event;
     if (!eventDetails) {
