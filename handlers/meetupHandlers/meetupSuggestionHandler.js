@@ -83,7 +83,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
 
       bot.sendMessage(
         userChatId,
-        `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${meetstrLink}`
+        `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Meetstr: ${meetstrLink}`
       );
     } catch (error) {
       console.error("Error publishing event to Nostr:", error);

@@ -12,6 +12,7 @@
     "@nostr-dev-kit/ndk": "^2.10.0",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
+    "ndk": "^1.0.0",
     "ngeohash": "^0.6.3",
     "node-fetch": "^3.3.2",
     "node-schedule": "^2.1.1",

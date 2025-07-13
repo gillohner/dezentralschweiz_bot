@@ -1,66 +1,116 @@
-import WebSocket from "ws";
 import crypto from "crypto";
 import ngeohash from "ngeohash";
 import { finalizeEvent } from "nostr-tools/pure";
 import { getPublicKey, nip19 } from "nostr-tools";
+import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
 import config from "../bot/config.js";
 
 const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
 
-const getEventHash = (event) => {
-  const serialized = JSON.stringify([
-    0,
-    event.pubkey,
-    event.created_at,
-    event.kind,
-    event.tags,
-    event.content,
-  ]);
-  return sha256(serialized);
+// Initialize NDK instance
+let ndk = null;
+
+const initializeNDK = () => {
+  if (!ndk) {
+    // Ensure we have relays and trim any whitespace
+    const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(
+      Boolean
+    ) || [
+      "wss://relay.nostr.band",
+      "wss://relay.damus.io",
+      "wss://nos.lol",
+      "wss://relay.primal.net",
+    ];
+
+    console.log("Initializing NDK with relays:", relays);
+
+    ndk = new NDK({
+      explicitRelayUrls: relays,
+      enableOutboxModel: false, // Disable outbox model which can cause issues
+      autoConnectUserRelays: false, // Don't auto-connect to user relays
+      autoFetchUserMutelist: false, // Don't auto-fetch mute lists
+    });
+
+    // Add connection event listeners for debugging
+    ndk.pool.on("relay:connect", (relay) => {
+      console.log(`✅ Connected to relay: ${relay.url}`);
+    });
+
+    ndk.pool.on("relay:disconnect", (relay) => {
+      console.log(`❌ Disconnected from relay: ${relay.url}`);
+    });
+
+    ndk.pool.on("relay:error", (relay, error) => {
+      console.log(`⚠️ Relay error for ${relay.url}:`, error.message);
+    });
+  }
+  return ndk;
 };
 
 const fetchEventDirectly = async (filter) => {
   try {
-    const event = await new Promise((resolve, reject) => {
-      const ws = new WebSocket(config.FETCH_RELAY);
-      const timeout = setTimeout(() => {
-        ws.close();
-        reject(new Error("Timeout"));
-      }, 10000);
+    const ndkInstance = initializeNDK();
 
-      ws.on("open", () => {
-        const subscriptionMessage = JSON.stringify(["REQ", "my-sub", filter]);
-        ws.send(subscriptionMessage);
+    // Ensure connection with better handling
+    let connectedRelays = ndkInstance.pool.connectedRelays();
+    if (!connectedRelays.length) {
+      console.log("Connecting to relays for fetch...");
+      try {
+        await ndkInstance.connect(10000); // 10 second timeout
+        // Wait a bit for connections to establish
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        connectedRelays = ndkInstance.pool.connectedRelays();
+        console.log(`Connected to ${connectedRelays.length} relays for fetch`);
+      } catch (connectError) {
+        console.warn(
+          "Some relays failed to connect for fetch, continuing with available ones"
+        );
+      }
+    }
+
+    // Create a subscription for the filter
+    const subscription = ndkInstance.subscribe(filter);
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        subscription.stop();
+        resolve(null);
+      }, 15000); // Increased timeout to 15 seconds
+
+      let eventFound = false;
+
+      subscription.on("event", (event) => {
+        if (!eventFound) {
+          eventFound = true;
+          clearTimeout(timeout);
+          subscription.stop();
+          // Convert NDKEvent to plain object similar to nostr-tools format
+          resolve({
+            id: event.id,
+            pubkey: event.pubkey,
+            created_at: event.created_at,
+            kind: event.kind,
+            tags: event.tags,
+            content: event.content,
+            sig: event.sig,
+          });
+        }
       });
 
-      ws.on("message", (data) => {
-        const message = JSON.parse(data);
-        if (message[0] === "EVENT" && message[1] === "my-sub") {
+      subscription.on("eose", () => {
+        if (!eventFound) {
           clearTimeout(timeout);
-          ws.close();
-          resolve(message[2]);
-        } else if (message[0] === "EOSE") {
-          clearTimeout(timeout);
-          ws.close();
+          subscription.stop();
           resolve(null);
         }
       });
 
-      ws.on("error", (error) => {
-        console.error(`WebSocket error for ${config.FETCH_RELAY}:`, error);
-        clearTimeout(timeout);
-        reject(error);
-      });
+      subscription.start();
     });
-    return event;
   } catch (error) {
-    console.error(
-      `Error fetching event from relay ${config.FETCH_RELAY}:`,
-      error
-    );
+    console.error(`Error fetching event with NDK:`, error);
+    return null;
   }
-
-  return null;
 };
 
 export const checkForDeletionEvent = async (eventId) => {
@@ -75,10 +125,7 @@ export const checkForDeletionEvent = async (eventId) => {
       return true; // Deletion event found
     }
   } catch (error) {
-    console.error(
-      `Error checking for deletion event on relay ${config.FETCH_RELAY}:`,
-      error
-    );
+    console.error(error);
   }
 
   console.log(`No deletion event found for ${eventId}`);
@@ -249,12 +296,13 @@ const publishEventToNostr = async (eventDetails) => {
   const signedEvent = finalizeEvent(eventTemplate, privateKey);
   console.log("Created Nostr event:", signedEvent);
 
-  for (const relay of config.DEFAULT_RELAYS) {
-    try {
-      await publishToRelay(relay, signedEvent);
-    } catch (error) {
-      console.error(`Error publishing event to relay ${relay}:`, error);
-    }
+  // Publish to all relays using NDK
+  try {
+    await publishToRelay(null, signedEvent); // NDK handles multiple relays
+    console.log("Event published successfully");
+  } catch (error) {
+    console.error(`Error publishing event:`, error);
+    // Continue execution even if publishing fails
   }
 
   if (eventTemplate.kind === 31923) {
@@ -264,19 +312,44 @@ const publishEventToNostr = async (eventDetails) => {
   return signedEvent;
 };
 
-const publishToRelay = (relay, event) => {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(relay);
-    ws.on("open", () => {
-      ws.send(JSON.stringify(["EVENT", event]));
-      ws.close();
-      resolve();
-    });
-    ws.on("error", (error) => {
-      console.error(`Error connecting to relay ${relay}:`, error);
-      reject(error);
-    });
-  });
+const publishToRelay = async (relay, event) => {
+  try {
+    const ndkInstance = initializeNDK();
+
+    // Ensure connection with better handling
+    let connectedRelays = ndkInstance.pool.connectedRelays();
+    if (!connectedRelays.length) {
+      console.log("Connecting to relays...");
+
+      // Try to connect with longer timeout and retry
+      try {
+        await ndkInstance.connect(10000); // 10 second timeout
+        // Wait a bit more for connections to establish
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        connectedRelays = ndkInstance.pool.connectedRelays();
+        console.log(`Connected to ${connectedRelays.length} relays`);
+      } catch (connectError) {
+        console.error("Failed to connect to relays:", connectError);
+        // Try to get any available relays even if not all connected
+        connectedRelays = ndkInstance.pool.relays();
+        console.log(
+          `Using ${connectedRelays.size} available relays (may not all be connected)`
+        );
+      }
+    }
+
+    // Create NDKEvent from the event object
+    const ndkEvent = new NDKEvent(ndkInstance, event);
+
+    // Publish the event
+    await ndkEvent.publish();
+    console.log(`Successfully published event to relays`);
+  } catch (error) {
+    console.error(`Error publishing event:`, error);
+    console.log(
+      "Event may still have been published to some relays despite errors"
+    );
+  }
 };
 
 const updateCalendarEvent = async (newEvent, privateKey) => {
@@ -299,9 +372,15 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
   if (calendarEvent) {
     const calendarPubkey = decoded.data.pubkey;
     calendarEvent.pubkey = calendarPubkey;
-    const newEventReference = `31923:${newEvent.pubkey}:${
-      newEvent.tags.find((t) => t[0] === "a")[1]
-    }`;
+
+    // Find the "d" tag in the new event
+    const dTag = newEvent.tags.find((t) => t[0] === "d");
+    if (!dTag || !dTag[1]) {
+      console.error("No 'd' tag found in new event:", newEvent);
+      return;
+    }
+
+    const newEventReference = `31923:${newEvent.pubkey}:${dTag[1]}`;
     calendarEvent.tags.push(["a", newEventReference]);
     calendarEvent.created_at = Math.floor(Date.now() / 1000);
     delete calendarEvent.id;
@@ -309,16 +388,11 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
     const updatedCalendarEvent = finalizeEvent(calendarEvent, privateKey);
     console.log("Updated calendar event:", updatedCalendarEvent);
 
-    for (const relay of config.DEFAULT_RELAYS) {
-      try {
-        console.log(`Publishing updated calendar event to relay: ${relay}`);
-        await publishToRelay(relay, updatedCalendarEvent);
-      } catch (error) {
-        console.error(
-          `Error publishing updated calendar event to relay ${relay}:`,
-          error
-        );
-      }
+    try {
+      await publishToRelay(null, updatedCalendarEvent); // NDK handles multiple relays
+      console.log("Successfully published updated calendar event");
+    } catch (error) {
+      console.error("Error publishing updated calendar event:", error);
     }
   } else {
     console.error("Calendar event not found");
