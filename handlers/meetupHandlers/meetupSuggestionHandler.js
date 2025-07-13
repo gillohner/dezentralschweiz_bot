@@ -6,6 +6,25 @@ import userStates from "../../userStates.js";
 import { deleteMessage } from "../../utils/helpers.js";
 import { isValidDate, isValidTime } from "../../utils/validators.js";
 
+// Clean up old user states to prevent memory leaks and data contamination
+const cleanupOldUserStates = () => {
+  const now = Date.now();
+  const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+  Object.keys(userStates).forEach((chatId) => {
+    const userState = userStates[chatId];
+    if (userState && userState.createdAt) {
+      if (now - userState.createdAt > maxAge) {
+        console.log(`Cleaning up old user state for chatId: ${chatId}`);
+        delete userStates[chatId];
+      }
+    }
+  });
+};
+
+// Run cleanup every hour
+setInterval(cleanupOldUserStates, 60 * 60 * 1000);
+
 const handleMeetupSuggestion = (bot, msg) => {
   if (msg.chat.type !== "private") {
     bot.sendMessage(
@@ -28,7 +47,8 @@ const handleMeetupSuggestion = (bot, msg) => {
     return;
   }
   const chatId = msg.chat.id;
-  userStates[chatId] = null; // Reset user state
+  // Completely reset user state to prevent old data interference
+  delete userStates[chatId];
   startEventSuggestion(bot, chatId, msg);
 };
 
@@ -40,7 +60,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     `Event ${isApproved ? "approved" : "rejected"} for user ${userChatId}`
   );
   if (isApproved) {
-    const eventDetails = userStates[userChatId].event;
+    const eventDetails = userStates[userChatId]?.event;
     if (!eventDetails) {
       console.error("No pending event found for user", userChatId);
       bot.sendMessage(
@@ -59,11 +79,11 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
         pubkey: publishedEvent.pubkey,
         identifier: publishedEvent.tags.find((t) => t[0] === "d")?.[1] || "",
       });
-      const flockstrLink = `https://dezentralbot.riginode.xyz/event/${eventNaddr}`;
+      const meetstrLink = `https://meetstr.com/event/${eventNaddr}`;
 
       bot.sendMessage(
         userChatId,
-        `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${flockstrLink}`
+        `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Flockstr: ${meetstrLink}`
       );
     } catch (error) {
       console.error("Error publishing event to Nostr:", error);
@@ -79,6 +99,9 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     );
   }
 
+  // Clean up user state after processing
+  delete userStates[userChatId];
+
   bot.answerCallbackQuery(callbackQuery.id, {
     text: isApproved ? "Event genehmigt" : "Event abgelehnt",
   });
@@ -92,6 +115,7 @@ const startEventSuggestion = (bot, chatId, msg) => {
     firstName: msg.from.first_name || "",
     lastName: msg.from.last_name || "",
     event: {},
+    createdAt: Date.now(), // Add timestamp for cleanup
   };
   bot.sendMessage(
     chatId,
@@ -223,7 +247,7 @@ const handleEventCreationStep = async (bot, msg) => {
         );
         return;
       }
-      userStates[chatId].end_date = text;
+      userStates[chatId].event.end_date = text;
       userStates[chatId].step = "end_time";
       bot.sendMessage(
         chatId,
@@ -244,11 +268,11 @@ const handleEventCreationStep = async (bot, msg) => {
         );
         return;
       }
-      userStates[chatId].end_time = text;
+      userStates[chatId].event.end_time = text;
       showOptionalFieldsMenu(bot, chatId);
       break;
     case "image":
-      userStates[chatId].image = text;
+      userStates[chatId].event.image = text;
       showOptionalFieldsMenu(bot, chatId);
       break;
   }
@@ -266,6 +290,18 @@ const handleCancellation = (bot, chatId) => {
 };
 
 const showOptionalFieldsMenu = (bot, chatId) => {
+  // Check if event is already submitted
+  if (userStates[chatId] && userStates[chatId].submitted) {
+    bot.sendMessage(
+      chatId,
+      "Dein Event wurde bereits zur Genehmigung eingereicht. Du kannst mit /meetup_vorschlagen ein neues Event erstellen.",
+      {
+        disable_notification: true,
+      }
+    );
+    return;
+  }
+
   const keyboard = {
     inline_keyboard: [
       [
@@ -305,9 +341,30 @@ const showOptionalFieldsMenu = (bot, chatId) => {
 };
 
 const handleOptionalField = (bot, chatId, field) => {
-  if (!userStates[chatId]) {
-    userStates[chatId] = {}; // Initialize the state if it doesn't exist
+  // Ensure we have a valid user state
+  if (!userStates[chatId] || !userStates[chatId].event) {
+    bot.sendMessage(
+      chatId,
+      "Deine Session ist abgelaufen. Bitte starte mit /meetup_vorschlagen neu.",
+      {
+        disable_notification: true,
+      }
+    );
+    return;
   }
+
+  // Check if already submitted
+  if (userStates[chatId].submitted) {
+    bot.sendMessage(
+      chatId,
+      "Dein Event wurde bereits zur Genehmigung eingereicht. Du kannst mit /meetup_vorschlagen ein neues Event erstellen.",
+      {
+        disable_notification: true,
+      }
+    );
+    return;
+  }
+
   userStates[chatId].step = field;
   switch (field) {
     case "end_date":
@@ -338,7 +395,16 @@ const handleOptionalField = (bot, chatId, field) => {
 
 const sendEventForApproval = (bot, callbackQuery, userChatId) => {
   const msg = callbackQuery.message;
-  const eventDetails = userStates[userChatId].event;
+  const eventDetails = userStates[userChatId]?.event;
+
+  // Check if already submitted
+  if (userStates[userChatId] && userStates[userChatId].submitted) {
+    bot.answerCallbackQuery(callbackQuery.id, {
+      text: "Event wurde bereits eingereicht!",
+      show_alert: true,
+    });
+    return;
+  }
 
   if (!eventDetails) {
     bot.sendMessage(
@@ -348,7 +414,11 @@ const sendEventForApproval = (bot, callbackQuery, userChatId) => {
         disable_notification: true,
       }
     );
+    return;
   }
+
+  // Mark as submitted immediately to prevent duplicate submissions
+  userStates[userChatId].submitted = true;
 
   const adminChatId = config.ADMIN_CHAT_ID;
   const userInfo = userStates[userChatId];
@@ -391,16 +461,23 @@ Beschreibung: ${eventDetails.description}
 
   delete userStates[userChatId].step;
 
-  bot.sendMessage(adminChatId, message, {
-    reply_markup: JSON.stringify(keyboard),
-  });
-  bot.sendMessage(
-    userChatId,
-    "Dein Event-Vorschlag wurde zur Genehmigung eingereicht. Wir werden dich benachrichtigen, sobald er überprüft wurde.",
+  // Edit the message to remove the buttons and show submission confirmation
+  bot.editMessageText(
+    "Dein Event wurde zur Genehmigung eingereicht! ✅\n\nWir werden dich benachrichtigen, sobald er überprüft wurde.",
     {
+      chat_id: userChatId,
+      message_id: msg.message_id,
       disable_notification: true,
     }
   );
+
+  bot.sendMessage(adminChatId, message, {
+    reply_markup: JSON.stringify(keyboard),
+  });
+
+  bot.answerCallbackQuery(callbackQuery.id, {
+    text: "Event eingereicht!",
+  });
 };
 
 const handleConfirmLocation = (bot, callbackQuery) => {
