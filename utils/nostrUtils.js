@@ -7,75 +7,33 @@ import config from "../bot/config.js";
 
 const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
 
-// Initialize NDK instance
-let ndk = null;
+// Simple NDK initialization
+const getNDK = () => {
+  const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(Boolean) || [
+    "wss://relay.nostr.band",
+    "wss://relay.damus.io", 
+    "wss://nos.lol",
+    "wss://relay.primal.net",
+  ];
 
-const initializeNDK = () => {
-  if (!ndk) {
-    // Ensure we have relays and trim any whitespace
-    const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(
-      Boolean
-    ) || [
-      "wss://relay.nostr.band",
-      "wss://relay.damus.io",
-      "wss://nos.lol",
-      "wss://relay.primal.net",
-    ];
-
-    console.log("Initializing NDK with relays:", relays);
-
-    ndk = new NDK({
-      explicitRelayUrls: relays,
-      enableOutboxModel: false, // Disable outbox model which can cause issues
-      autoConnectUserRelays: false, // Don't auto-connect to user relays
-      autoFetchUserMutelist: false, // Don't auto-fetch mute lists
-    });
-
-    // Add connection event listeners for debugging
-    ndk.pool.on("relay:connect", (relay) => {
-      console.log(`✅ Connected to relay: ${relay.url}`);
-    });
-
-    ndk.pool.on("relay:disconnect", (relay) => {
-      console.log(`❌ Disconnected from relay: ${relay.url}`);
-    });
-
-    ndk.pool.on("relay:error", (relay, error) => {
-      console.log(`⚠️ Relay error for ${relay.url}:`, error.message);
-    });
-  }
-  return ndk;
+  return new NDK({
+    explicitRelayUrls: relays,
+  });
 };
 
 const fetchEventDirectly = async (filter) => {
   try {
-    const ndkInstance = initializeNDK();
-
-    // Ensure connection with better handling
-    let connectedRelays = ndkInstance.pool.connectedRelays();
-    if (!connectedRelays.length) {
-      console.log("Connecting to relays for fetch...");
-      try {
-        await ndkInstance.connect(10000); // 10 second timeout
-        // Wait a bit for connections to establish
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        connectedRelays = ndkInstance.pool.connectedRelays();
-        console.log(`Connected to ${connectedRelays.length} relays for fetch`);
-      } catch (connectError) {
-        console.warn(
-          "Some relays failed to connect for fetch, continuing with available ones"
-        );
-      }
-    }
+    const ndk = getNDK();
+    await ndk.connect();
 
     // Create a subscription for the filter
-    const subscription = ndkInstance.subscribe(filter);
+    const subscription = ndk.subscribe(filter);
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         subscription.stop();
         resolve(null);
-      }, 15000); // Increased timeout to 15 seconds
+      }, 15000); // 15 second timeout
 
       let eventFound = false;
 
@@ -302,7 +260,7 @@ const publishEventToNostr = async (eventDetails) => {
     console.log("Event published successfully");
   } catch (error) {
     console.error(`Error publishing event:`, error);
-    // Continue execution even if publishing fails
+    throw error; // Re-throw the error to allow caller to handle
   }
 
   if (eventTemplate.kind === 31923) {
@@ -314,41 +272,18 @@ const publishEventToNostr = async (eventDetails) => {
 
 const publishToRelay = async (relay, event) => {
   try {
-    const ndkInstance = initializeNDK();
-
-    // Ensure connection with better handling
-    let connectedRelays = ndkInstance.pool.connectedRelays();
-    if (!connectedRelays.length) {
-      console.log("Connecting to relays...");
-
-      // Try to connect with longer timeout and retry
-      try {
-        await ndkInstance.connect(10000); // 10 second timeout
-        // Wait a bit more for connections to establish
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        connectedRelays = ndkInstance.pool.connectedRelays();
-        console.log(`Connected to ${connectedRelays.length} relays`);
-      } catch (connectError) {
-        console.error("Failed to connect to relays:", connectError);
-        // Try to get any available relays even if not all connected
-        connectedRelays = ndkInstance.pool.relays();
-        console.log(
-          `Using ${connectedRelays.size} available relays (may not all be connected)`
-        );
-      }
-    }
+    const ndk = getNDK();
+    await ndk.connect();
 
     // Create NDKEvent from the event object
-    const ndkEvent = new NDKEvent(ndkInstance, event);
+    const ndkEvent = new NDKEvent(ndk, event);
 
     // Publish the event
     await ndkEvent.publish();
     console.log(`Successfully published event to relays`);
   } catch (error) {
     console.error(`Error publishing event:`, error);
-    console.log(
-      "Event may still have been published to some relays despite errors"
-    );
+    throw error; // Re-throw to allow caller to handle
   }
 };
 
@@ -393,6 +328,7 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
       console.log("Successfully published updated calendar event");
     } catch (error) {
       console.error("Error publishing updated calendar event:", error);
+      // Don't throw here as this is supplementary functionality
     }
   } else {
     console.error("Calendar event not found");
