@@ -35,5 +35,6 @@ jobs:
             cd /root/dezentralschweiz_bot
             git pull origin main
             npm install
-            pm2 restart dezentralschweiz_bot
+            pm2 stop dezentralschweiz_bot
+            pm2 start dezentralschweiz_bot --node-args="--dns-result-order=ipv4first"
             pm2 save

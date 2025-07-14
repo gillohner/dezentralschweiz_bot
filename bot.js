@@ -1,6 +1,3 @@
-import { setDefaultResultOrder } from "node:dns";
-setDefaultResultOrder("ipv4first");
-
 // External Libraries
 import TelegramBot from "node-telegram-bot-api";
 
