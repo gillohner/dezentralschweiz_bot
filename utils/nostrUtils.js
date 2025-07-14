@@ -5,9 +5,9 @@ import { getPublicKey, nip19 } from "nostr-tools";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
 import config from "../bot/config.js";
 
-const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
+let ndkInstance = null;
 
-export function getNdk() {
+const getNDK = () => {
   if (!ndkInstance) {
     ndkInstance = new NDK({
       explicitRelayUrls: [
@@ -23,7 +23,7 @@ export function getNdk() {
     ndkInstance.connect().catch(console.error);
   }
   return ndkInstance;
-}
+};
 
 // Wait for at least one relay to connect
 const waitForConnection = async (ndk, timeoutMs = 10000) => {
@@ -52,7 +52,6 @@ const waitForConnection = async (ndk, timeoutMs = 10000) => {
 const fetchEventDirectly = async (filter) => {
   try {
     const ndk = getNDK();
-    await ndk.connect();
 
     // Wait for at least one relay to connect
     await waitForConnection(ndk);
@@ -304,7 +303,6 @@ const publishEventToNostr = async (eventDetails) => {
 const publishToRelay = async (relay, event) => {
   try {
     const ndk = getNDK();
-    await ndk.connect();
 
     // Wait for at least one relay to connect
     await waitForConnection(ndk);
