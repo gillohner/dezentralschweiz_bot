@@ -11,14 +11,17 @@ const getNDK = () => {
   if (!ndkInstance) {
     ndkInstance = new NDK({
       explicitRelayUrls: [
-        "wss://multiplexer.huszonegy.world",
         "wss://relay.damus.io",
         "wss://nos.lol",
         "wss://relay.primal.net",
         "wss://relay.nostr.band",
-        "wss://relay.nostr.watch",
         "wss://relay.snort.social",
+        "wss://purplepag.es",
+        "wss://relay.current.fyi",
+        "wss://nostr.wine",
       ],
+      // Increase timeout for VPS environments
+      relayConnectTimeout: 30000,
     });
     ndkInstance.connect().catch(console.error);
   }
@@ -26,7 +29,7 @@ const getNDK = () => {
 };
 
 // Wait for at least one relay to connect
-const waitForConnection = async (ndk, timeoutMs = 10000) => {
+const waitForConnection = async (ndk, timeoutMs = 30000) => {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error("Connection timeout: No relays connected"));
@@ -39,13 +42,13 @@ const waitForConnection = async (ndk, timeoutMs = 10000) => {
         console.log(`Connected to ${connectedRelays.length} relay(s)`);
         resolve();
       } else {
-        // Check again in 100ms
-        setTimeout(checkConnection, 100);
+        // Check again in 500ms for slower connections
+        setTimeout(checkConnection, 500);
       }
     };
 
-    // Start checking immediately
-    checkConnection();
+    // Wait a bit before first check to allow initial connections
+    setTimeout(checkConnection, 1000);
   });
 };
 
@@ -290,7 +293,18 @@ const publishEventToNostr = async (eventDetails) => {
     console.log("Event published successfully");
   } catch (error) {
     console.error(`Error publishing event:`, error);
-    throw error; // Re-throw the error to allow caller to handle
+
+    // Try to get fresh NDK instance and retry once
+    console.log("Attempting to recreate connection and retry...");
+    ndkInstance = null; // Force recreation
+
+    try {
+      await publishToRelay(null, signedEvent);
+      console.log("Event published successfully on retry");
+    } catch (retryError) {
+      console.error(`Retry also failed:`, retryError);
+      throw retryError; // Re-throw the retry error
+    }
   }
 
   if (eventTemplate.kind === 31923) {
@@ -304,14 +318,43 @@ const publishToRelay = async (relay, event) => {
   try {
     const ndk = getNDK();
 
-    // Wait for at least one relay to connect
-    await waitForConnection(ndk);
+    // Wait for at least one relay to connect with retries
+    let retries = 3;
+    let connected = false;
+
+    while (retries > 0 && !connected) {
+      try {
+        await waitForConnection(ndk, 30000);
+        connected = true;
+      } catch (error) {
+        retries--;
+        console.log(`Connection attempt failed, ${retries} retries left`);
+
+        if (retries === 0) {
+          throw new Error(
+            `Failed to connect to any relays after multiple attempts: ${error.message}`
+          );
+        }
+
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Try to reconnect
+        console.log("Attempting to reconnect...");
+        ndk.connect().catch(console.error);
+      }
+    }
 
     // Create NDKEvent from the event object
     const ndkEvent = new NDKEvent(ndk, event);
 
-    // Publish the event
-    await ndkEvent.publish();
+    // Publish the event with timeout
+    const publishPromise = ndkEvent.publish();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Publish timeout")), 15000)
+    );
+
+    await Promise.race([publishPromise, timeoutPromise]);
     console.log(`Successfully published event to relays`);
   } catch (error) {
     console.error(`Error publishing event:`, error);
@@ -367,4 +410,32 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
   }
 };
 
-export { fetchCalendarEvents, publishEventToNostr, fetchEventDirectly };
+// Health check function to test relay connectivity
+export const testRelayConnectivity = async () => {
+  try {
+    const ndk = getNDK();
+    await waitForConnection(ndk, 15000);
+    const connectedRelays = ndk.pool.connectedRelays();
+    console.log(
+      `Health check: Connected to ${connectedRelays.length} relay(s)`
+    );
+    return {
+      success: true,
+      connectedRelays: connectedRelays.length,
+      relays: Array.from(connectedRelays).map((relay) => relay.url),
+    };
+  } catch (error) {
+    console.error("Health check failed:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+};
+
+export {
+  fetchCalendarEvents,
+  publishEventToNostr,
+  fetchEventDirectly,
+  testRelayConnectivity,
+};
