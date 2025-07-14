@@ -67,10 +67,10 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
   const action = callbackQuery.data;
   const userChatId = action.split("_")[2];
   const isApproved = action.startsWith("approve_meetup_");
-  
+
   // Create unique action ID to prevent duplicate processing
   const actionId = `${action}_${userChatId}_${callbackQuery.message.message_id}`;
-  
+
   // Check if this action has already been processed
   if (processedAdminActions.has(actionId)) {
     bot.answerCallbackQuery(callbackQuery.id, {
@@ -79,14 +79,14 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     });
     return;
   }
-  
+
   // Mark action as processed immediately
   processedAdminActions.add(actionId);
-  
+
   console.log(
     `Event ${isApproved ? "approved" : "rejected"} for user ${userChatId}`
   );
-  
+
   // Check if user state still exists (might have been processed already)
   if (!userStates[userChatId] || !userStates[userChatId].event) {
     bot.answerCallbackQuery(callbackQuery.id, {
@@ -96,7 +96,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     deleteMessage(bot, config.ADMIN_CHAT_ID, callbackQuery.message.message_id);
     return;
   }
-  
+
   if (isApproved) {
     const eventDetails = userStates[userChatId]?.event;
     if (!eventDetails) {

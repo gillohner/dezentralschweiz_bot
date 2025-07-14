@@ -7,21 +7,23 @@ import config from "../bot/config.js";
 
 const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
 
-// Simple NDK initialization
-const getNDK = () => {
-  const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(
-    Boolean
-  ) || [
-    "wss://relay.nostr.band",
-    "wss://relay.damus.io",
-    "wss://nos.lol",
-    "wss://relay.primal.net",
-  ];
-
-  return new NDK({
-    explicitRelayUrls: relays,
-  });
-};
+export function getNdk() {
+  if (!ndkInstance) {
+    ndkInstance = new NDK({
+      explicitRelayUrls: [
+        "wss://multiplexer.huszonegy.world",
+        "wss://relay.damus.io",
+        "wss://nos.lol",
+        "wss://relay.primal.net",
+        "wss://relay.nostr.band",
+        "wss://relay.nostr.watch",
+        "wss://relay.snort.social",
+      ],
+    });
+    ndkInstance.connect().catch(console.error);
+  }
+  return ndkInstance;
+}
 
 // Wait for at least one relay to connect
 const waitForConnection = async (ndk, timeoutMs = 10000) => {
