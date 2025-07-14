@@ -410,32 +410,4 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
   }
 };
 
-// Health check function to test relay connectivity
-export const testRelayConnectivity = async () => {
-  try {
-    const ndk = getNDK();
-    await waitForConnection(ndk, 15000);
-    const connectedRelays = ndk.pool.connectedRelays();
-    console.log(
-      `Health check: Connected to ${connectedRelays.length} relay(s)`
-    );
-    return {
-      success: true,
-      connectedRelays: connectedRelays.length,
-      relays: Array.from(connectedRelays).map((relay) => relay.url),
-    };
-  } catch (error) {
-    console.error("Health check failed:", error);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-};
-
-export {
-  fetchCalendarEvents,
-  publishEventToNostr,
-  fetchEventDirectly,
-  testRelayConnectivity,
-};
+export { fetchCalendarEvents, publishEventToNostr, fetchEventDirectly };
