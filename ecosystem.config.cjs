@@ -12,13 +12,12 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         // Force IPv4 only
-        NODE_OPTIONS: "--dns-result-order=ipv4first",
         // Disable IPv6 completely for Node.js
         UV_USE_IO_URING: "0",
         // Force IPv4 for network operations
         PREFER_IPV4: "1",
       },
-      interpreter_args: "--dns-result-order=ipv4first --max-old-space-size=512",
+      node_args: "--dns-result-order=ipv4first --max-old-space-size=512",
       // Additional PM2 options
       merge_logs: true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
