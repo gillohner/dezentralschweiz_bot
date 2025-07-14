@@ -2,7 +2,8 @@ export default {
   apps: [
     {
       name: "dezentralschweiz_bot",
-      script: "bot.js",
+      script: "./bot.js",
+      cwd: "/root/dezentralschweiz_bot",
       instances: 1,
       autorestart: true,
       watch: false,
