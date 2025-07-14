@@ -4,6 +4,7 @@ import { finalizeEvent } from "nostr-tools/pure";
 import { getPublicKey, nip19 } from "nostr-tools";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
 import config from "../bot/config.js";
+import WebSocket from "ws";
 
 let ndkInstance = null;
 
@@ -22,6 +23,7 @@ const getNDK = () => {
       ],
       // Increase timeout for VPS environments
       relayConnectTimeout: 30000,
+      websocketFactory: (url) => new WebSocket(url, { family: 4 }),
     });
     ndkInstance.connect().catch(console.error);
   }
