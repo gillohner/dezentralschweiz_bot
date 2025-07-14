@@ -40,6 +40,5 @@ jobs:
             # Stop the app if running
             pm2 stop dezentralschweiz_bot || true
             pm2 delete dezentralschweiz_bot || true
-            # Start using ecosystem file which forces IPv4
-            pm2 start ecosystem.config.js
+            pm2 start ecosystem.config.cjs
             pm2 save
