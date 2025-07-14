@@ -9,9 +9,11 @@ const sha256 = (data) => crypto.createHash("sha256").update(data).digest("hex");
 
 // Simple NDK initialization
 const getNDK = () => {
-  const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(Boolean) || [
+  const relays = config.DEFAULT_RELAYS?.map((relay) => relay.trim()).filter(
+    Boolean
+  ) || [
     "wss://relay.nostr.band",
-    "wss://relay.damus.io", 
+    "wss://relay.damus.io",
     "wss://nos.lol",
     "wss://relay.primal.net",
   ];
@@ -21,10 +23,37 @@ const getNDK = () => {
   });
 };
 
+// Wait for at least one relay to connect
+const waitForConnection = async (ndk, timeoutMs = 10000) => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Connection timeout: No relays connected"));
+    }, timeoutMs);
+
+    const checkConnection = () => {
+      const connectedRelays = ndk.pool.connectedRelays();
+      if (connectedRelays.length > 0) {
+        clearTimeout(timeout);
+        console.log(`Connected to ${connectedRelays.length} relay(s)`);
+        resolve();
+      } else {
+        // Check again in 100ms
+        setTimeout(checkConnection, 100);
+      }
+    };
+
+    // Start checking immediately
+    checkConnection();
+  });
+};
+
 const fetchEventDirectly = async (filter) => {
   try {
     const ndk = getNDK();
     await ndk.connect();
+
+    // Wait for at least one relay to connect
+    await waitForConnection(ndk);
 
     // Create a subscription for the filter
     const subscription = ndk.subscribe(filter);
@@ -274,6 +303,9 @@ const publishToRelay = async (relay, event) => {
   try {
     const ndk = getNDK();
     await ndk.connect();
+
+    // Wait for at least one relay to connect
+    await waitForConnection(ndk);
 
     // Create NDKEvent from the event object
     const ndkEvent = new NDKEvent(ndk, event);
