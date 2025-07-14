@@ -1,3 +1,4 @@
+// ecosystem.config.cjs
 module.exports = {
   apps: [
     {
@@ -17,7 +18,7 @@ module.exports = {
         // Force IPv4 for network operations
         PREFER_IPV4: "1",
       },
-      node_args: ["--dns-result-order=ipv4first", "--max-old-space-size=512"],
+      interpreter_args: "--dns-result-order=ipv4first --max-old-space-size=512",
       // Additional PM2 options
       merge_logs: true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",

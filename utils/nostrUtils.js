@@ -255,7 +255,6 @@ const publishEventToNostr = async (eventDetails) => {
         ["start", startTimestamp.toString()],
         ["start_tzid", "Europe/Zurich"],
         ["location", eventDetails.location],
-        ["g", geohash],
         ["p", publicKey, "", "host"],
       ],
     };
