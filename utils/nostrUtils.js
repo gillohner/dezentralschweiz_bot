@@ -4,8 +4,6 @@ import { finalizeEvent } from "nostr-tools/pure";
 import { getPublicKey, nip19 } from "nostr-tools";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
 import config from "../bot/config.js";
-import { setDefaultResultOrder } from "node:dns";
-setDefaultResultOrder("ipv4first");
 
 let ndkInstance = null;
 
