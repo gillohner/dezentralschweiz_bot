@@ -35,6 +35,11 @@ jobs:
             cd /root/dezentralschweiz_bot
             git pull origin main
             npm install
-            pm2 stop dezentralschweiz_bot
-            pm2 start dezentralschweiz_bot --node-args="--dns-result-order=ipv4first"
+            # Create logs directory if it doesn't exist
+            mkdir -p logs
+            # Stop the app if running
+            pm2 stop dezentralschweiz_bot || true
+            pm2 delete dezentralschweiz_bot || true
+            # Start using ecosystem file which forces IPv4
+            pm2 start ecosystem.config.js
             pm2 save
