@@ -184,7 +184,7 @@ const handleEventCreationStep = async (bot, msg) => {
       userStates[chatId].step = "date";
       bot.sendMessage(
         chatId,
-        "Super! Nun gib bitte das Datum des Events ein (Format: YYYY-MM-DD):\n\nOder tippe /cancel um abzubrechen.",
+        "Super! Nun gib bitte das Datum des Events ein (Format: DD-MM-YYYY):\n\nOder tippe /cancel um abzubrechen.",
         {
           disable_notification: true,
         }
@@ -194,7 +194,7 @@ const handleEventCreationStep = async (bot, msg) => {
       if (!isValidDate(text)) {
         bot.sendMessage(
           chatId,
-          "Ungültiges Datumsformat. Bitte verwende YYYY-MM-DD:\n\nOder tippe /cancel um abzubrechen.",
+          "Ungültiges Datumsformat. Bitte verwende DD-MM-YYYY:\n\nOder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
@@ -278,7 +278,7 @@ const handleEventCreationStep = async (bot, msg) => {
       if (!isValidDate(text)) {
         bot.sendMessage(
           chatId,
-          "Ungültiges Datumsformat. Bitte verwende YYYY-MM-DD:\n\nOder tippe /cancel um abzubrechen.",
+          "Ungültiges Datumsformat. Bitte verwende DD-MM-YYYY:\n\nOder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
@@ -311,6 +311,10 @@ const handleEventCreationStep = async (bot, msg) => {
       break;
     case "image":
       userStates[chatId].event.image = text;
+      showOptionalFieldsMenu(bot, chatId);
+      break;
+    case "url":
+      userStates[chatId].event.url = text;
       showOptionalFieldsMenu(bot, chatId);
       break;
   }
@@ -356,7 +360,13 @@ const showOptionalFieldsMenu = (bot, chatId) => {
       ],
       [
         {
-          text: "Zur Genehmigung senden",
+          text: "URL hinzufügen",
+          callback_data: "add_url",
+        },
+      ],
+      [
+        {
+          text: "🚀 Zur Genehmigung senden",
           callback_data: "send_for_approval",
         },
       ],
@@ -408,7 +418,7 @@ const handleOptionalField = (bot, chatId, field) => {
     case "end_date":
       bot.sendMessage(
         chatId,
-        "Bitte gib das Enddatum des Events ein (Format: YYYY-MM-DD):",
+        "Bitte gib das Enddatum des Events ein (Format: DD-MM-YYYY):",
         {
           disable_notification: true,
         }
@@ -419,14 +429,10 @@ const handleOptionalField = (bot, chatId, field) => {
         disable_notification: true,
       });
       break;
-    case "about":
-      bot.sendMessage(
-        chatId,
-        'Bitte gib einen kurzen "Über"-Text für das Event ein:',
-        {
-          disable_notification: true,
-        }
-      );
+    case "url":
+      bot.sendMessage(chatId, "Bitte gib eine valide URL ein:", {
+        disable_notification: true,
+      });
       break;
   }
 };

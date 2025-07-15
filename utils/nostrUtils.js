@@ -234,11 +234,17 @@ const publishEventToNostr = async (eventDetails) => {
       );
     }
 
-    const decoded = nip19.decode(calendarNaddr);
-
     const eventId = crypto.randomBytes(16).toString("hex");
+
+    // Convert DD-MM-YYYY to YYYY-MM-DD for Date constructor
+    const convertDateFormat = (ddmmyyyy) => {
+      const [day, month, year] = ddmmyyyy.split("-");
+      return `${year}-${month}-${day}`;
+    };
+
+    const isoDate = convertDateFormat(eventDetails.date);
     const startTimestamp = Math.floor(
-      new Date(`${eventDetails.date}T${eventDetails.time}`).getTime() / 1000
+      new Date(`${isoDate}T${eventDetails.time}`).getTime() / 1000
     );
     const geohash = ngeohash.encode(
       eventDetails.latitude,
@@ -265,10 +271,9 @@ const publishEventToNostr = async (eventDetails) => {
       eventTemplate.tags.push(["r", eventDetails.tg_user_link]);
 
     if (eventDetails.end_date && eventDetails.end_time) {
+      const isoEndDate = convertDateFormat(eventDetails.end_date);
       const endTimestamp = Math.floor(
-        new Date(
-          `${eventDetails.end_date}T${eventDetails.end_time}`
-        ).getTime() / 1000
+        new Date(`${isoEndDate}T${eventDetails.end_time}`).getTime() / 1000
       );
       eventTemplate.tags.push(["end", endTimestamp.toString()]);
       eventTemplate.tags.push(["end_tzid", "Europe/Zurich"]);
@@ -276,6 +281,10 @@ const publishEventToNostr = async (eventDetails) => {
 
     if (eventDetails.image) {
       eventTemplate.tags.push(["image", eventDetails.image]);
+    }
+
+    if (eventDetails.url) {
+      eventTemplate.tags.push(["r", eventDetails.url]);
     }
   }
 
