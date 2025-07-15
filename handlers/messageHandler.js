@@ -3,6 +3,8 @@ import {
   ethereumResponses,
   shitcoinTriggerWords,
   shitCoinResponses,
+  shitcoinerTriggerWords,
+  shitcoinerResponses,
 } from "../datasets/shitcoinLists.js";
 import userStates from "../userStates.js";
 import { handleDeletionInput } from "./meetupHandlers/meetupDeletionHandler.js";
@@ -102,6 +104,26 @@ const handleMessage = (bot, msg) => {
         matchedShitcoin.toUpperCase() +
         "?!\n\n" +
         shitCoinResponses[Math.floor(Math.random() * shitCoinResponses.length)];
+      bot.sendMessage(msg.chat.id, response, {
+        parse_mode: "HTML",
+        disable_notification: true,
+      });
+    }
+
+    // Check for shitcoiner names (Bitcoin skeptics and scammers)
+    let matchedShitcoiner = "";
+    const isShitcoiner = shitcoinerTriggerWords.some((name) => {
+      const match = new RegExp(`\\b${name}\\b`, 'i').test(lowerText);
+      if (match) {
+        matchedShitcoiner = name;
+      }
+      return match;
+    });
+
+    if (isShitcoiner) {
+      const response =
+        "🚨 " + matchedShitcoiner.toUpperCase() + " 🚨\n\n" +
+        shitcoinerResponses[Math.floor(Math.random() * shitcoinerResponses.length)];
       bot.sendMessage(msg.chat.id, response, {
         parse_mode: "HTML",
         disable_notification: true,
