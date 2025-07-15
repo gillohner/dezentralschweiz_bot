@@ -193,6 +193,8 @@ const shitcoinerTriggerWords = [
   "fink",
   "blackrock",
   "blackrock ceo",
+  "Co Pierre",
+  "Co-pierre",
 ];
 
 const shitcoinerResponses = [
