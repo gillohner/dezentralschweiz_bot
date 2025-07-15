@@ -55,6 +55,7 @@ const main = async () => {
   await setupCommands(bot);
   await initializeBot(bot);
   setupEventHandlers(bot);
+  scheduleWeeklyMeetupPost(bot);
 };
 
 main();
