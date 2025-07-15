@@ -153,6 +153,7 @@ const shitcoinerTriggerWords = [
   "peter schiff",
   "schiff",
   "euro pacific",
+  "maurice",
   "maurice höfgen",
   "höfgen",
   "hoefgen",
