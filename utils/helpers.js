@@ -1,4 +1,28 @@
 import userStates from "../userStates.js";
+import config from "../bot/config.js";
+import https from "https";
+import http from "http";
+
+export const downloadTelegramImage = async (bot, fileId) => {
+  const { file_path } = await bot.getFile(fileId);
+  const url = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${file_path}`;
+
+  return new Promise((resolve, reject) => {
+    const req = (url.startsWith("https:") ? https : http).get(url, (res) => {
+      if (res.statusCode !== 200) {
+        return reject(new Error(`Download failed: ${res.statusCode}`));
+      }
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        let mime = res.headers["content-type"]?.split(";")[0].trim();
+        if (!mime) mime = "image/jpeg";
+        resolve({ buffer: Buffer.concat(chunks), mimeType: mime });
+      });
+    });
+    req.on("error", reject);
+  });
+};
 
 const escapeHTML = (text) => {
   return text

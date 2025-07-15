@@ -1,0 +1,10 @@
+import { PrivKey } from '@noble/curves/abstract/utils';
+import { Proof } from '../common/index.js';
+import { BlindedMessage } from './index.js';
+export declare const createP2PKsecret: (pubkey: string) => Uint8Array;
+export declare const signP2PKsecret: (secret: Uint8Array, privateKey: PrivKey) => Uint8Array<ArrayBufferLike>;
+export declare const signBlindedMessage: (B_: string, privateKey: PrivKey) => Uint8Array;
+export declare const getSignedProofs: (proofs: Array<Proof>, privateKey: string | string[]) => Array<Proof>;
+export declare const getSignedOutput: (output: BlindedMessage, privateKey: PrivKey) => BlindedMessage;
+export declare const getSignedOutputs: (outputs: Array<BlindedMessage>, privateKey: string) => Array<BlindedMessage>;
+export declare const getSignedProof: (proof: Proof, privateKey: PrivKey) => Proof;

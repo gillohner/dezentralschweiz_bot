@@ -1,3 +1,4 @@
+// handlers/meetupHandlers/meetupSuggestionHandler.js
 import { publishEventToNostr } from "../../utils/nostrUtils.js";
 import { nip19 } from "nostr-tools";
 import { fetchLocationData } from "../../utils/openstreetmap/nominatim.js";
@@ -5,6 +6,8 @@ import config from "../../bot/config.js";
 import userStates from "../../userStates.js";
 import { deleteMessage } from "../../utils/helpers.js";
 import { isValidDate, isValidTime } from "../../utils/validators.js";
+import { uploadImageToBlossom } from "../../utils/blossomUpload.js";
+import { downloadTelegramImage } from "../../utils/helpers.js";
 
 // Clean up old user states to prevent memory leaks and data contamination
 const cleanupOldUserStates = () => {
@@ -310,8 +313,55 @@ const handleEventCreationStep = async (bot, msg) => {
       showOptionalFieldsMenu(bot, chatId);
       break;
     case "image":
-      userStates[chatId].event.image = text;
-      showOptionalFieldsMenu(bot, chatId);
+      // Handle both text URL and photo message
+      if (msg.photo) {
+        try {
+          // Get the highest resolution photo
+          const photo = msg.photo[msg.photo.length - 1];
+
+          bot.sendMessage(chatId, "Bild wird hochgeladen...", {
+            disable_notification: true,
+          });
+
+          // Download image from Telegram
+          const { buffer, mimeType } = await downloadTelegramImage(
+            bot,
+            photo.file_id
+          );
+
+          // Upload to Blossom
+          const blossomUrl = await uploadImageToBlossom(buffer, mimeType);
+
+          userStates[chatId].event.image = blossomUrl;
+
+          bot.sendMessage(chatId, "Bild erfolgreich hochgeladen! ✅", {
+            disable_notification: true,
+          });
+
+          showOptionalFieldsMenu(bot, chatId);
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          bot.sendMessage(
+            chatId,
+            "Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.",
+            {
+              disable_notification: true,
+            }
+          );
+        }
+      } else if (text) {
+        // Fallback for URL input
+        userStates[chatId].event.image = text;
+        showOptionalFieldsMenu(bot, chatId);
+      } else {
+        bot.sendMessage(
+          chatId,
+          "Bitte senden Sie ein Bild oder eine Bild-URL:",
+          {
+            disable_notification: true,
+          }
+        );
+      }
       break;
     case "url":
       userStates[chatId].event.url = text;
@@ -354,7 +404,7 @@ const showOptionalFieldsMenu = (bot, chatId) => {
       ],
       [
         {
-          text: "Bild-URL hinzufügen",
+          text: "Bild hochladen (URL oder Foto)",
           callback_data: "add_image",
         },
       ],
@@ -425,12 +475,16 @@ const handleOptionalField = (bot, chatId, field) => {
       );
       break;
     case "image":
-      bot.sendMessage(chatId, "Bitte gib die URL des Eventbildes ein:", {
-        disable_notification: true,
-      });
+      bot.sendMessage(
+        chatId,
+        "Lade ein Bild hoch oder füge eine Bild-URL hinzu:",
+        {
+          disable_notification: true,
+        }
+      );
       break;
     case "url":
-      bot.sendMessage(chatId, "Bitte gib eine valide URL ein:", {
+      bot.sendMessage(chatId, "Füge eine URL hinzu:", {
         disable_notification: true,
       });
       break;

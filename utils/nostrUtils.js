@@ -1,3 +1,4 @@
+// utils/nostrUtils.js
 import crypto from "crypto";
 import ngeohash from "ngeohash";
 import { finalizeEvent } from "nostr-tools/pure";
@@ -414,4 +415,4 @@ const updateCalendarEvent = async (newEvent, privateKey) => {
   }
 };
 
-export { fetchCalendarEvents, publishEventToNostr, fetchEventDirectly };
+export { fetchCalendarEvents, publishEventToNostr, fetchEventDirectly, getNDK };
