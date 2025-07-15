@@ -38,7 +38,11 @@ const cleanUrl = (url) => {
 };
 
 const formatLocation = async (event) => {
-  let result = `📍 ${event.locationData.formattedName}`;
+  let result = `📍 ${
+    event.locationData.formattedName
+      ? event.locationData.formattedName
+      : event.locationData.formattedAddress
+  }`;
   let googleMapsLink = cleanUrl(event.locationData.mapLinks.google);
   let osmLink = cleanUrl(event.locationData.mapLinks.osm);
   let appleMapsLink = cleanUrl(event.locationData.mapLinks.apple);
