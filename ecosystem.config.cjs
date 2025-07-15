@@ -20,7 +20,7 @@ module.exports = {
       node_args: "--dns-result-order=ipv4first --max-old-space-size=512",
       // Additional PM2 options
       merge_logs: true,
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      log_date_format: "DD-MM-YYYY HH:mm:ss Z",
       error_file: "./logs/err.log",
       out_file: "./logs/out.log",
       log_file: "./logs/combined.log",
