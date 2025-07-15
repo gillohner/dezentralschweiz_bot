@@ -523,16 +523,7 @@ const handleConfirmLocation = (bot, callbackQuery) => {
   const chatId = msg.chat.id;
 
   const locationData = userStates[chatId].tempLocation.data;
-  const lat = locationData.lat;
-  const lon = locationData.lon;
-  const locationName = locationData.name;
-  const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}&query_place_id=${locationName}`;
-  const osmLink = `https://www.openstreetmap.org/${locationData.osm_type}/${locationData.osm_id}`;
-  const appleMapsLink = `http://maps.apple.com/?q=${locationName}&ll=${lat},${lon}`;
 
-  userStates[chatId].event.osm_link = osmLink;
-  userStates[chatId].event.gmaps_link = googleMapsLink;
-  userStates[chatId].event.applemaps_link = appleMapsLink;
   userStates[chatId].event.location = locationData.display_name;
   userStates[chatId].step = "description";
   bot.sendMessage(
