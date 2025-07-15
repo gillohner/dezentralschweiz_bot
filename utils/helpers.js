@@ -60,23 +60,17 @@ const formatLocation = async (event) => {
   result += "\n";
 
   if (googleMapsLink || osmLink || appleMapsLink) {
-    result += "   ";
     if (googleMapsLink) {
       result += `🌍 <a href="${googleMapsLink}">Google</a>`;
     }
-
-    if (osmLink && (googleMapsLink || appleMapsLink)) {
-      result += " | ";
-    }
     if (osmLink) {
-      result += `🕵️ <a href="${osmLink}">OSM</a>`;
-    }
-
-    if (appleMapsLink && (googleMapsLink || osmLink)) {
-      result += " | ";
+      result += ` | 🕵️ <a href="${osmLink}">OSM</a>`;
     }
     if (appleMapsLink) {
-      result += `🍏 <a href="${appleMapsLink}">Apple</a>`;
+      result += ` | 🍏 <a href="${appleMapsLink}">Apple</a>`;
+    }
+    if (btcMapLink) {
+      result += ` | ₿ <a href="${btcMapLink}">BTC Map</a>`;
     }
 
     result += "\n";

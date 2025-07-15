@@ -156,7 +156,7 @@ const formatMeetupsMessage = async (calendar, timeFrame) => {
       }
 
       if (i < events.length - 1) {
-        message += "\n🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶♦️🔶\n\n";
+        message += "\n\n";
       }
     }
   }
