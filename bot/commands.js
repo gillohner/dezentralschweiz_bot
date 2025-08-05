@@ -1,9 +1,5 @@
 const commands = [
     {
-        command: 'start',
-        description: 'Starte den Bot'
-    },
-    {
         command: 'help',
         description: 'Zeige verfügbare Befehle'
     },
