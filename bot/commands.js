@@ -4,6 +4,10 @@ const commands = [
         description: 'Starte den Bot'
     },
     {
+        command: 'help',
+        description: 'Zeige verfügbare Befehle'
+    },
+    {
         command: 'meetups',
         description: 'Zeige bevorstehende Meetups'
     },

@@ -19,6 +19,7 @@ import { handleMeetupDeletion } from "./handlers/meetupHandlers/meetupDeletionHa
 import { handleNewMember } from "./handlers/newMemberHandler.js";
 import { handleMessage } from "./handlers/messageHandler.js";
 import { handleStart } from "./handlers/startHandler.js";
+import { handleHelp } from "./handlers/helpHandler.js";
 
 // Datasets
 import communityLinks from "./datasets/communityLinks.js";
@@ -38,6 +39,7 @@ const initializeBot = async (bot) => {
 
 const setupEventHandlers = (bot) => {
   bot.onText(/\/start/, (msg) => handleStart(bot, msg));
+  bot.onText(/\/help/, (msg) => handleHelp(bot, msg));
   bot.onText(/\/meetups/, (msg) => handleMeetups(bot, msg));
   bot.onText(/\/refresh_commands/, (msg) => handleRefreshCommands(bot, msg));
   bot.onText(/\/links/, (msg) => handleLinks(bot, msg, communityLinks));
