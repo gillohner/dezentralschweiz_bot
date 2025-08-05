@@ -18,7 +18,7 @@ const scheduleWeeklyMeetupPost = (bot) => {
 
   // Schedule weekly post on Mondays at 7 AM (force update)
   schedule.scheduleJob("0 7 * * 1", async () => {
-    console.log("Running scheduled weekly meetup post (Monday 6 AM)");
+    console.log("Running scheduled weekly meetup post (Monday 7 AM)");
     await postWeeklyMeetups(bot, true); // Force update on scheduled run
   });
 
