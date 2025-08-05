@@ -8,14 +8,24 @@ import {
 } from "./utils/helpers.js";
 import config from "./bot/config.js";
 
+// Store information about previously posted events to detect new ones
+let lastPostedEvents = new Set();
+let lastPostDate = null;
+
 const scheduleWeeklyMeetupPost = (bot) => {
   // Check and update on startup (with 7-day check)
   checkAndUpdateOnStartup(bot);
 
-  // Schedule weekly post on Mondays at 7 AM (force update)
-  schedule.scheduleJob("0 7 * * 1", async () => {
-    console.log("Running scheduled weekly meetup post");
+  // Schedule weekly post on Mondays at 6 AM (force update)
+  schedule.scheduleJob("0 6 * * 1", async () => {
+    console.log("Running scheduled weekly meetup post (Monday 6 AM)");
     await postWeeklyMeetups(bot, true); // Force update on scheduled run
+  });
+
+  // Schedule daily check for new events at 10 AM (except Monday since that's handled above)
+  schedule.scheduleJob("0 6 * * 2-7,0", async () => {
+    console.log("Running daily check for new events");
+    await checkForNewEvents(bot);
   });
 };
 
@@ -26,6 +36,72 @@ const checkAndUpdateOnStartup = async (bot) => {
   } catch (error) {
     console.error("Error checking pinned messages on startup:", error);
   }
+};
+
+// Check for new events and post immediately if found
+const checkForNewEvents = async (bot) => {
+  let chatId = config.MEETUP_CHAT_ID;
+  if (!chatId) {
+    console.error("MEETUP_CHAT_ID is not set in the environment variables");
+    return;
+  }
+
+  try {
+    // Get current week's events
+    const timeFrame = "dieseWoche";
+    const meetupMessage = await fetchMeetupsLogic(timeFrame);
+
+    // Skip if no events found
+    if (
+      !meetupMessage ||
+      meetupMessage.includes("Keine Meetups für den gewählten Zeitraum")
+    ) {
+      console.log("No events found for this week, skipping new event check");
+      return;
+    }
+
+    // Extract event identifiers from the current message
+    const currentEvents = extractEventIdentifiers(meetupMessage);
+
+    // Check if we have new events compared to last post
+    const newEvents = [...currentEvents].filter(
+      (event) => !lastPostedEvents.has(event)
+    );
+
+    if (newEvents.length > 0) {
+      console.log(`Found ${newEvents.length} new event(s):`, newEvents);
+
+      // Post the updated message immediately
+      await postWeeklyMeetups(bot, true, "Neue Events hinzugefügt! 🎉\n\n");
+
+      console.log("Posted update due to new events");
+    } else {
+      console.log("No new events found, keeping current schedule");
+    }
+  } catch (error) {
+    console.error("Error checking for new events:", error);
+  }
+};
+
+// Extract event identifiers from a meetup message to detect changes
+const extractEventIdentifiers = (message) => {
+  const eventIdentifiers = new Set();
+
+  // Extract event titles/URLs as identifiers
+  const eventLinkRegex = /<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
+  let match;
+
+  while ((match = eventLinkRegex.exec(message)) !== null) {
+    const url = match[1];
+    const title = match[2];
+
+    // Use URL as unique identifier (more reliable than title)
+    if (url.includes("meetstr.com/event/")) {
+      eventIdentifiers.add(url);
+    }
+  }
+
+  return eventIdentifiers;
 };
 
 // Helper function to get all pinned messages from the bot
@@ -54,7 +130,11 @@ const getBotPinnedMessages = async (bot, chatId) => {
   }
 };
 
-const postWeeklyMeetups = async (bot, isScheduledRun = false) => {
+const postWeeklyMeetups = async (
+  bot,
+  isScheduledRun = false,
+  customPrefix = ""
+) => {
   let chatId = config.MEETUP_CHAT_ID;
   if (!chatId) {
     console.error("MEETUP_CHAT_ID is not set in the environment variables");
@@ -80,6 +160,13 @@ const postWeeklyMeetups = async (bot, isScheduledRun = false) => {
             error
           );
         }
+      }
+
+      // Reset tracking for scheduled runs
+      if (!customPrefix) {
+        lastPostedEvents.clear();
+        lastPostDate = new Date();
+        console.log("Reset event tracking for new week");
       }
     } else {
       // Startup check: apply 7-day rule
@@ -141,10 +228,15 @@ const postWeeklyMeetups = async (bot, isScheduledRun = false) => {
         meetupMessage &&
         !meetupMessage.includes("Keine Meetups für den gewählten Zeitraum")
       ) {
+        // Add custom prefix if provided (for new event notifications)
+        const finalMessage = customPrefix
+          ? customPrefix + meetupMessage
+          : meetupMessage;
+
         let sentMessage = await sendAndStoreMessage(
           bot,
           chatId,
-          meetupMessage,
+          finalMessage,
           {
             parse_mode: "HTML",
             disable_web_page_preview: true,
@@ -154,6 +246,13 @@ const postWeeklyMeetups = async (bot, isScheduledRun = false) => {
 
         await bot.pinChatMessage(chatId, sentMessage.message_id);
         console.log("New meetup message pinned");
+
+        // Update tracking with current events
+        lastPostedEvents = extractEventIdentifiers(meetupMessage);
+        lastPostDate = new Date();
+        console.log(
+          `Tracking ${lastPostedEvents.size} events for change detection`
+        );
       } else {
         console.log("No meetups found, skipping post");
       }
@@ -163,4 +262,9 @@ const postWeeklyMeetups = async (bot, isScheduledRun = false) => {
   }
 };
 
-export { scheduleWeeklyMeetupPost, postWeeklyMeetups, checkAndUpdateOnStartup };
+export {
+  scheduleWeeklyMeetupPost,
+  postWeeklyMeetups,
+  checkAndUpdateOnStartup,
+  checkForNewEvents,
+};

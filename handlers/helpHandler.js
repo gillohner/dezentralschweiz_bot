@@ -1,6 +1,6 @@
 const handleHelp = async (bot, msg) => {
-    const chatId = msg.chat.id;
-    const message = `
+  const chatId = msg.chat.id;
+  const message = `
 <b>Dezentralschweiz Bot - Hilfe 🇨🇭</b>
 
 Hier sind die verfügbaren Befehle:
@@ -24,12 +24,10 @@ Wir freuen uns, dass du Teil unserer Community bist! Bei Fragen stehen wir dir g
 
 <blockquote>Made with ❤️ by @g1ll0hn3r</blockquote>
 `;
-    await bot.sendMessage(chatId, message, {
-        parse_mode: 'HTML',
-        disable_notification: true
-    });
+  await bot.sendMessage(chatId, message, {
+    parse_mode: "HTML",
+    disable_notification: true,
+  });
 };
 
-export {
-    handleHelp
-};
+export { handleHelp };
