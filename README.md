@@ -46,7 +46,6 @@ To set up the Dezentralschweiz Bot, follow these steps:
    NADDR_LIST=comma_separated_list_of_event_kinds_31924
    DEFAULT_RELAYS=your_post_relays_here
    ADMIN_CHAT_ID=your_admin_chat_id_here
-   LOGS_CHAT_ID=your_logs_chat_id_here
    BOT_NSEC=your_bot_private_key_here
    EVENT_CALENDAR_NADDR=your_event_calendar_naddr_here
    ```

@@ -6,61 +6,25 @@ import { getPublicKey, nip19 } from "nostr-tools";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
 import config from "../bot/config.js";
 import WebSocket from "ws";
-import {
-  resolveRelaysToIPv4,
-  diagnoseDNSResolution,
-} from "./ipv4RelayResolver.js";
 
 let ndkInstance = null;
-let relaysResolved = false;
 
-const DEFAULT_RELAYS = [
-  "wss://relay.damus.io",
-  "wss://nos.lol",
-  "wss://relay.primal.net",
-  "wss://relay.nostr.band",
-  "wss://relay.snort.social",
-  "wss://purplepag.es",
-  "wss://relay.current.fyi",
-  "wss://nostr.wine",
-];
-
-const getNDK = async () => {
+const getNDK = () => {
   if (!ndkInstance) {
-    let relayUrls = DEFAULT_RELAYS;
-
-    // In production, try to resolve relays to IPv4 addresses
-    if (process.env.NODE_ENV === "production" && !relaysResolved) {
-      try {
-        console.log("🔧 Resolving relays to IPv4 addresses...");
-        await diagnoseDNSResolution(DEFAULT_RELAYS);
-        relayUrls = await resolveRelaysToIPv4(DEFAULT_RELAYS);
-        relaysResolved = true;
-        console.log("✅ Relay resolution complete");
-      } catch (error) {
-        console.warn(
-          "⚠️ Relay IPv4 resolution failed, using original URLs:",
-          error.message
-        );
-        relayUrls = DEFAULT_RELAYS;
-      }
-    }
-
     ndkInstance = new NDK({
-      explicitRelayUrls: relayUrls,
+      explicitRelayUrls: [
+        "wss://relay.damus.io",
+        "wss://nos.lol",
+        "wss://relay.primal.net",
+        "wss://relay.nostr.band",
+        "wss://relay.snort.social",
+        "wss://purplepag.es",
+        "wss://relay.current.fyi",
+        "wss://nostr.wine",
+      ],
       // Increase timeout for VPS environments
       relayConnectTimeout: 30000,
-      websocketFactory: (url) => {
-        return new WebSocket(url, {
-          family: 4, // Force IPv4
-          timeout: 30000, // 30 second timeout
-          handshakeTimeout: 30000,
-          // Additional options for better connectivity
-          headers: {
-            "User-Agent": "dezentralschweiz-bot/1.0",
-          },
-        });
-      },
+      websocketFactory: (url) => new WebSocket(url, { family: 4 }),
     });
     ndkInstance.connect().catch(console.error);
   }
@@ -93,7 +57,7 @@ const waitForConnection = async (ndk, timeoutMs = 30000) => {
 
 const fetchEventDirectly = async (filter) => {
   try {
-    const ndk = await getNDK();
+    const ndk = getNDK();
 
     // Wait for at least one relay to connect
     await waitForConnection(ndk);
@@ -357,7 +321,7 @@ const publishEventToNostr = async (eventDetails) => {
 
 const publishToRelay = async (relay, event) => {
   try {
-    const ndk = await getNDK();
+    const ndk = getNDK();
 
     // Wait for at least one relay to connect with retries
     let retries = 3;

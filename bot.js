@@ -23,9 +23,6 @@ import { handleStart } from "./handlers/startHandler.js";
 // Datasets
 import communityLinks from "./datasets/communityLinks.js";
 
-// Network diagnostics
-import { diagnoseNetwork, getNetworkInfo } from "./utils/networkDiagnostics.js";
-
 const bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, {
   polling: true,
 });
@@ -56,14 +53,6 @@ const setupEventHandlers = (bot) => {
 
 const main = async () => {
   console.log("Booting up the Nostr...");
-
-  // Run network diagnostics on startup (only in production)
-  if (process.env.NODE_ENV === "production") {
-    console.log("🔧 Running network diagnostics...");
-    await diagnoseNetwork();
-    await getNetworkInfo();
-  }
-
   await setupCommands(bot);
   await initializeBot(bot);
   setupEventHandlers(bot);

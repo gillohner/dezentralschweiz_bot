@@ -11,18 +11,13 @@ module.exports = {
       max_memory_restart: "1G",
       env: {
         NODE_ENV: "production",
-        // Force IPv4 DNS resolution
-        NODE_OPTIONS: "--dns-result-order=ipv4first",
         // Force IPv4 only
         // Disable IPv6 completely for Node.js
         UV_USE_IO_URING: "0",
         // Force IPv4 for network operations
         PREFER_IPV4: "1",
-        // Additional network tuning
-        NODE_TLS_REJECT_UNAUTHORIZED: "0",
       },
-      node_args:
-        "--dns-result-order=ipv4first --max-old-space-size=512 --unhandled-rejections=warn",
+      node_args: "--dns-result-order=ipv4first --max-old-space-size=512",
       // Additional PM2 options
       merge_logs: true,
       log_date_format: "DD-MM-YYYY HH:mm:ss Z",
