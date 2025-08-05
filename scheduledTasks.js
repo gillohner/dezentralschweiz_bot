@@ -16,14 +16,14 @@ const scheduleWeeklyMeetupPost = (bot) => {
   // Check and update on startup (with 7-day check)
   checkAndUpdateOnStartup(bot);
 
-  // Schedule weekly post on Mondays at 6 AM (force update)
-  schedule.scheduleJob("0 6 * * 1", async () => {
+  // Schedule weekly post on Mondays at 7 AM (force update)
+  schedule.scheduleJob("0 7 * * 1", async () => {
     console.log("Running scheduled weekly meetup post (Monday 6 AM)");
     await postWeeklyMeetups(bot, true); // Force update on scheduled run
   });
 
-  // Schedule daily check for new events at 10 AM (except Monday since that's handled above)
-  schedule.scheduleJob("0 6 * * 2-7,0", async () => {
+  // Schedule daily check for new events at 7 AM (except Monday since that's handled above)
+  schedule.scheduleJob("0 7 * * 2-7,0", async () => {
     console.log("Running daily check for new events");
     await checkForNewEvents(bot);
   });
