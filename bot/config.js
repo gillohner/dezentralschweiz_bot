@@ -19,6 +19,7 @@ const config = {
       .filter(Boolean) || [],
   ADMIN_CHAT_ID: process.env.ADMIN_CHAT_ID,
   MEETUP_CHAT_ID: process.env.MEETUP_CHAT_ID,
+  LOGS_CHAT_ID: process.env.LOGS_CHAT_ID,
   BOT_NSEC: process.env.BOT_NSEC,
   EVENT_CALENDAR_NADDR: process.env.EVENT_CALENDAR_NADDR,
   BOT_PUBKEY: process.env.BOT_PUBKEY,

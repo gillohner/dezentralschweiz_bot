@@ -5,6 +5,7 @@ import { fetchLocationData } from "../../utils/openstreetmap/nominatim.js";
 import config from "../../bot/config.js";
 import userStates from "../../userStates.js";
 import { deleteMessage } from "../../utils/helpers.js";
+import { logEventAction } from "../../utils/logUtils.js";
 import { isValidDate, isValidTime } from "../../utils/validators.js";
 import { uploadImageToBlossom } from "../../utils/blossomUpload.js";
 import { downloadTelegramImage } from "../../utils/helpers.js";
@@ -100,8 +101,16 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     return;
   }
 
+  const eventDetails = userStates[userChatId]?.event;
+  const userInfo = userStates[userChatId];
+  let userIdentifier = userInfo.username
+    ? `@${userInfo.username}`
+    : `${userInfo.firstName} ${userInfo.lastName}`.trim();
+  if (!userIdentifier) {
+    userIdentifier = "Unbekannter Benutzer";
+  }
+
   if (isApproved) {
-    const eventDetails = userStates[userChatId]?.event;
     if (!eventDetails) {
       console.error("No pending event found for user", userChatId);
       bot.sendMessage(
@@ -126,11 +135,29 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
         userChatId,
         `Dein Event wurde genehmigt und veröffentlicht! Hier ist der Link zu deinem Event auf Meetstr: ${meetstrLink}`
       );
+
+      // Log the event approval
+      await logEventAction(
+        bot,
+        "EVENT_APPROVED",
+        eventDetails,
+        userIdentifier,
+        `Veröffentlicht auf Meetstr: ${meetstrLink}`
+      );
     } catch (error) {
       console.error("Error publishing event to Nostr:", error);
       bot.sendMessage(
         userChatId,
         "Dein Event wurde genehmigt, konnte aber nicht veröffentlicht werden. Bitte kontaktiere den Administrator."
+      );
+
+      // Log the event approval even if publishing failed
+      await logEventAction(
+        bot,
+        "EVENT_APPROVED",
+        eventDetails,
+        userIdentifier,
+        "Fehler beim Veröffentlichen auf Nostr"
       );
     }
   } else {
@@ -138,6 +165,9 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
       userChatId,
       "Dein Event-Vorschlag wurde leider nicht genehmigt. Du kannst gerne einen neuen Vorschlag einreichen."
     );
+
+    // Log the event rejection
+    await logEventAction(bot, "EVENT_REJECTED", eventDetails, userIdentifier);
   }
 
   // Clean up user state after processing
@@ -491,7 +521,7 @@ const handleOptionalField = (bot, chatId, field) => {
   }
 };
 
-const sendEventForApproval = (bot, callbackQuery, userChatId) => {
+const sendEventForApproval = async (bot, callbackQuery, userChatId) => {
   const msg = callbackQuery.message;
   const eventDetails = userStates[userChatId]?.event;
 
@@ -572,6 +602,9 @@ Beschreibung: ${eventDetails.description}
   bot.sendMessage(adminChatId, message, {
     reply_markup: JSON.stringify(keyboard),
   });
+
+  // Log the event suggestion
+  await logEventAction(bot, "EVENT_SUGGESTED", eventDetails, userIdentifier);
 
   bot.answerCallbackQuery(callbackQuery.id, {
     text: "Event eingereicht!",

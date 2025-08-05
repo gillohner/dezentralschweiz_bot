@@ -14,6 +14,7 @@ The **Dezentralschweiz Bot** is a Telegram bot designed to provide users with in
 - **Shitcoin Alarm**: Mention a shitcoin and find out what happens.
 - **Tracking link cleaner**: Clean up tracking links and display nitter-links for twitter posts.
 - **Welcome-Messages**: Send welcome messages in predefined chat-groups.
+- **Event Logging**: All event creation, approval, rejection, and deletion actions are logged to a designated logs channel for audit and monitoring purposes.
 
 ## Feature Requests and Bug Reports
 
