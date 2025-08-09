@@ -51,12 +51,16 @@ const checkForNewEvents = async (bot) => {
     const timeFrame = "dieseWoche";
     const meetupMessage = await fetchMeetupsLogic(timeFrame);
 
-    // Skip if no events found
+    // Skip if no events found or if there was an error
     if (
       !meetupMessage ||
-      meetupMessage.includes("Keine Meetups für den gewählten Zeitraum")
+      meetupMessage.includes("Keine Meetups für den gewählten Zeitraum") ||
+      meetupMessage.includes("Ein Fehler ist beim") ||
+      meetupMessage.includes("Fehler beim Laden")
     ) {
-      console.log("No events found for this week, skipping new event check");
+      console.log(
+        "No events found or error occurred, skipping new event check"
+      );
       return;
     }
 

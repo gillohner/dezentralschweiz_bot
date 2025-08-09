@@ -11,6 +11,7 @@ The **Dezentralschweiz Bot** is a Telegram bot designed to provide users with in
 - **Delete Meetup**: Send a NIP-09 event if you need to delete the meetup again.
   - **Admin Approval**: Suggested NIP-09 events are sent to admins for approval before being published.
 - **Community Links**: Use the `/links` command to view important community resources and links.
+- **Calendar Event Requests**: Automatically listen for NIP-52 calendar events requesting to be added to calendars and send them to admins for approval.
 - **Shitcoin Alarm**: Mention a shitcoin and find out what happens.
 - **Tracking link cleaner**: Clean up tracking links and display nitter-links for twitter posts.
 - **Welcome-Messages**: Send welcome messages in predefined chat-groups.
@@ -46,6 +47,7 @@ To set up the Dezentralschweiz Bot, follow these steps:
    NADDR_LIST=comma_separated_list_of_event_kinds_31924
    DEFAULT_RELAYS=your_post_relays_here
    ADMIN_CHAT_ID=your_admin_chat_id_here
+   LOGS_CHAT_ID=your_logs_chat_id_here
    BOT_NSEC=your_bot_private_key_here
    EVENT_CALENDAR_NADDR=your_event_calendar_naddr_here
    ```

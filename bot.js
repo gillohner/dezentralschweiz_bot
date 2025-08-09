@@ -7,6 +7,7 @@ import config from "./bot/config.js";
 
 // Import Tasks
 import { scheduleWeeklyMeetupPost } from "./scheduledTasks.js";
+import { startCalendarEventListener } from "./handlers/calendarEventRequestHandler.js";
 
 // Handlers
 import { setupCommands } from "./bot/commands.js";
@@ -59,6 +60,7 @@ const main = async () => {
   await initializeBot(bot);
   setupEventHandlers(bot);
   scheduleWeeklyMeetupPost(bot);
+  startCalendarEventListener(bot);
 };
 
 main();

@@ -1,7 +1,8 @@
 // handlers/callbackHandler.js
 import { handleLinksCallback } from "./linkHandler.js";
 import { handleMeetupsFilter } from "./meetupHandlers/meetupDisplayingHandler.js";
-import { handleAdminApproval } from "./adminApprovalHandler.js";
+import { handleApprovalCallbacks } from "./meetupHandlers/meetupApprovalHandler.js";
+import { handleCalendarEventApprovalCallbacks } from "./calendarEventApprovalHandler.js";
 import {
   sendEventForApproval,
   handleCancellation,
@@ -21,8 +22,14 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
   } else if (action.startsWith("meetups_")) {
     const timeFrame = action.split("_")[1];
     await handleMeetupsFilter(bot, msg, timeFrame);
+  } else if (
+    action.startsWith("approve_cal") ||
+    action.startsWith("reject_cal") ||
+    action.startsWith("view_cal")
+  ) {
+    await handleCalendarEventApprovalCallbacks(bot, callbackQuery);
   } else if (action.startsWith("approve_") || action.startsWith("reject_")) {
-    await handleAdminApproval(bot, callbackQuery, action);
+    await handleApprovalCallbacks(bot, callbackQuery);
   } else if (action === "add_end_date") {
     handleOptionalField(bot, chatId, "end_date");
   } else if (action === "add_image") {
