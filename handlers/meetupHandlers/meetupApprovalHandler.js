@@ -3,6 +3,7 @@ import { getNDK } from "../../utils/nostrUtils.js";
 import config from "../../bot/config.js";
 import { escapeHTML } from "../../utils/helpers.js";
 import { nip19 } from "nostr-tools";
+import { addEventToCalendar } from "../calendarEventApprovalHandler.js";
 
 const handleApprovalCallbacks = async (bot, callbackQuery) => {
   const { data, message } = callbackQuery;
@@ -52,6 +53,11 @@ const approveEvent = async (bot, callbackQuery, eventId) => {
 
     // Publish the approved event to relays
     await event.publish();
+
+    // Also add the event to the calendar
+    const decoded = nip19.decode(config.EVENT_CALENDAR_NADDR);
+    const { pubkey: calendarPubkey, identifier: calendarIdentifier } = decoded.data;
+    await addEventToCalendar(ndk, event, calendarPubkey, calendarIdentifier);
 
     // Update the message to show approval
     const updatedMessage = `✅ <b>APPROVED</b>\n\n${callbackQuery.message.text}`;
