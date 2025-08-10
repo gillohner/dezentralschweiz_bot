@@ -1,10 +1,10 @@
 // utils/nostrUtils.js - Make sure publishEventToNostr uses proper date formats
-// 
+//
 // Example implementation for publishEventToNostr:
 //
 // export const publishEventToNostr = async (eventDetails) => {
 //   const eventKind = eventDetails.startTimestamp ? 31923 : 31922; // Time-based vs date-based
-//   
+//
 //   const tags = [
 //     ["d", generateEventId()], // Unique identifier
 //     ["title", eventDetails.title],
@@ -19,7 +19,7 @@
 //       tags.push(["end", eventDetails.isoEndDate]); // YYYY-MM-DD
 //     }
 //   } else {
-//     // Time-based event  
+//     // Time-based event
 //     tags.push(["start", eventDetails.startTimestamp.toString()]); // Unix timestamp
 //     if (eventDetails.endTimestamp) {
 //       tags.push(["end", eventDetails.endTimestamp.toString()]); // Unix timestamp
