@@ -9,7 +9,9 @@ import {
   handleConfirmLocation,
   handleRetryLocation,
   handleOptionalField,
+  handleAdminMeetupSuggestionApproval,
 } from "./meetupHandlers/meetupSuggestionHandler.js";
+import { handleAdminMeetupDeletionApproval } from "./meetupHandlers/meetupDeletionHandler.js";
 import { deleteMessage } from "../utils/helpers.js";
 
 const handleCallbackQuery = async (bot, callbackQuery) => {
@@ -28,8 +30,25 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
     action.startsWith("view_cal")
   ) {
     await handleCalendarEventApprovalCallbacks(bot, callbackQuery);
-  } else if (action.startsWith("approve_") || action.startsWith("reject_")) {
+  } else if (
+    (action.startsWith("approve_") || action.startsWith("reject_")) &&
+    !action.includes("meetup_") &&
+    !action.includes("delete_")
+  ) {
+    // Handle calendar event approvals (non-meetup, non-deletion)
     await handleApprovalCallbacks(bot, callbackQuery);
+  } else if (
+    action.startsWith("approve_meetup_") ||
+    action.startsWith("reject_meetup_")
+  ) {
+    // Handle meetup suggestion approvals
+    await handleAdminMeetupSuggestionApproval(bot, callbackQuery);
+  } else if (
+    action.startsWith("approve_delete_") ||
+    action.startsWith("reject_delete_")
+  ) {
+    // Handle meetup deletion approvals
+    await handleAdminMeetupDeletionApproval(bot, callbackQuery);
   } else if (action === "add_end_date") {
     handleOptionalField(bot, chatId, "end_date");
   } else if (action === "add_image") {
