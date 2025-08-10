@@ -1,4 +1,5 @@
 // handlers/meetupHandlers/meetupSuggestionHandler.js
+
 import { publishEventToNostr } from "../../utils/nostrUtils.js";
 import { nip19 } from "nostr-tools";
 import { fetchLocationData } from "../../utils/openstreetmap/nominatim.js";
@@ -9,6 +10,120 @@ import { logEventAction } from "../../utils/logUtils.js";
 import { isValidDate, isValidTime } from "../../utils/validators.js";
 import { uploadImageToBlossom } from "../../utils/blossomUpload.js";
 import { downloadTelegramImage } from "../../utils/helpers.js";
+
+// Function to parse various date/time formats
+const parseDateTime = (input) => {
+  // Remove extra spaces and normalize
+  const cleanInput = input.trim().replace(/\s+/g, " ");
+
+  // Patterns for different formats
+  const patterns = [
+    /^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2})\s+(\d{1,2}):(\d{2})$/, // DD.MM.YY HH:MM
+    /^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})\s+(\d{1,2}):(\d{2})$/, // DD.MM.YYYY HH:MM
+  ];
+
+  for (const pattern of patterns) {
+    const match = cleanInput.match(pattern);
+    if (match) {
+      const [, day, month, year, hours, minutes] = match;
+
+      // Parse numbers
+      const dayNum = parseInt(day);
+      const monthNum = parseInt(month);
+      let yearNum = parseInt(year);
+      const hoursNum = parseInt(hours);
+      const minutesNum = parseInt(minutes);
+
+      // Convert 2-digit year to 4-digit
+      if (yearNum < 100) {
+        yearNum = yearNum < 50 ? 2000 + yearNum : 1900 + yearNum;
+      }
+
+      // Validate ranges
+      if (
+        dayNum < 1 ||
+        dayNum > 31 ||
+        monthNum < 1 ||
+        monthNum > 12 ||
+        yearNum < 2020 ||
+        yearNum > 2100 ||
+        hoursNum < 0 ||
+        hoursNum > 23 ||
+        minutesNum < 0 ||
+        minutesNum > 59
+      ) {
+        return { isValid: false };
+      }
+
+      // Create date object and validate it's a real date
+      const date = new Date(
+        yearNum,
+        monthNum - 1,
+        dayNum,
+        hoursNum,
+        minutesNum
+      );
+      if (
+        date.getFullYear() !== yearNum ||
+        date.getMonth() !== monthNum - 1 ||
+        date.getDate() !== dayNum ||
+        date.getHours() !== hoursNum ||
+        date.getMinutes() !== minutesNum
+      ) {
+        return { isValid: false };
+      }
+
+      // Check if date is in the future (allow events from 1 hour ago to account for timezone differences)
+      const now = new Date();
+      now.setHours(now.getHours() - 1);
+      if (date <= now) {
+        return { isValid: false, error: "past_date" };
+      }
+
+      return {
+        isValid: true,
+        dateString: `${dayNum.toString().padStart(2, "0")}.${monthNum
+          .toString()
+          .padStart(2, "0")}.${yearNum}`,
+        timeString: `${hoursNum.toString().padStart(2, "0")}:${minutesNum
+          .toString()
+          .padStart(2, "0")}`,
+        timestamp: Math.floor(date.getTime() / 1000),
+        date: date,
+      };
+    }
+  }
+
+  return { isValid: false };
+};
+
+// Add helper function to ensure proper event data for Nostr
+const prepareEventForNostr = (eventDetails) => {
+  // Ensure we have proper timestamps for Nostr event
+  if (!eventDetails.startTimestamp && eventDetails.date && eventDetails.time) {
+    const fallbackDateTime = parseDateTime(
+      `${eventDetails.date} ${eventDetails.time}`
+    );
+    if (fallbackDateTime.isValid) {
+      eventDetails.startTimestamp = fallbackDateTime.timestamp;
+    }
+  }
+
+  if (
+    eventDetails.end_date &&
+    eventDetails.end_time &&
+    !eventDetails.endTimestamp
+  ) {
+    const fallbackEndDateTime = parseDateTime(
+      `${eventDetails.end_date} ${eventDetails.end_time}`
+    );
+    if (fallbackEndDateTime.isValid) {
+      eventDetails.endTimestamp = fallbackEndDateTime.timestamp;
+    }
+  }
+
+  return eventDetails;
+};
 
 // Clean up old user states to prevent memory leaks and data contamination
 const cleanupOldUserStates = () => {
@@ -103,11 +218,18 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
 
   const eventDetails = userStates[userChatId]?.event;
   const userInfo = userStates[userChatId];
-  let userIdentifier = userInfo.username
-    ? `@${userInfo.username}`
-    : `${userInfo.firstName} ${userInfo.lastName}`.trim();
-  if (!userIdentifier) {
-    userIdentifier = "Unbekannter Benutzer";
+
+  // Check if anonymous mode is enabled
+  let userIdentifier;
+  if (userStates[userChatId]?.anonymous) {
+    userIdentifier = "Anonymer Benutzer";
+  } else {
+    userIdentifier = userInfo.username
+      ? `@${userInfo.username}`
+      : `${userInfo.firstName} ${userInfo.lastName}`.trim();
+    if (!userIdentifier) {
+      userIdentifier = "Unbekannter Benutzer";
+    }
   }
 
   if (isApproved) {
@@ -121,7 +243,10 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     }
 
     try {
-      const publishedEvent = await publishEventToNostr(eventDetails);
+      // Prepare event data with proper timestamps
+      const preparedEventDetails = prepareEventForNostr(eventDetails);
+
+      const publishedEvent = await publishEventToNostr(preparedEventDetails);
       console.log("Event published to Nostr:", publishedEvent);
 
       const eventNaddr = nip19.naddrEncode({
@@ -190,7 +315,7 @@ const startEventSuggestion = (bot, chatId, msg) => {
   };
   bot.sendMessage(
     chatId,
-    "Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:\n\nDu kannst den Vorgang jederzeit mit /cancel abbrechen.",
+    "🎉 Lass uns ein neues Event erstellen! Bitte gib den Titel des Events ein:\n\n⚠️ Du kannst den Vorgang jederzeit mit /cancel abbrechen.",
     {
       disable_notification: true,
     }
@@ -214,52 +339,44 @@ const handleEventCreationStep = async (bot, msg) => {
       userStates[chatId].event.tg_user_link = `https://t.me/${username}`;
 
       userStates[chatId].event.title = text;
-      userStates[chatId].step = "date";
+      userStates[chatId].step = "datetime";
       bot.sendMessage(
         chatId,
-        "Super! Nun gib bitte das Datum des Events ein (Format: DD-MM-YYYY):\n\nOder tippe /cancel um abzubrechen.",
+        "📅 Super! Nun gib bitte Datum und Startzeit des Events ein.\n\nUnterstützte Formate:\n• DD.MM.YY HH:MM (z.B. 25.12.24 18:30)\n• DD.MM.YYYY HH:MM (z.B. 25.12.2024 18:30)\n• DD-MM-YY HH:MM (z.B. 25-12-24 18:30)\n• DD-MM-YYYY HH:MM (z.B. 25-12-2024 18:30)\n\n⚠️ Oder tippe /cancel um abzubrechen.",
         {
           disable_notification: true,
         }
       );
       break;
-    case "date":
-      if (!isValidDate(text)) {
+    case "datetime":
+      const parsedDateTime = parseDateTime(text);
+
+      if (!parsedDateTime.isValid) {
+        let errorMsg =
+          "❌ Ungültiges Format. Bitte verwende eines der folgenden Formate:\n• DD.MM.YY HH:MM (z.B. 25.12.24 18:30)\n• DD.MM.YYYY HH:MM (z.B. 25.12.2024 18:30)\n• DD-MM-YY HH:MM (z.B. 25-12-24 18:30)\n• DD-MM-YYYY HH:MM (z.B. 25-12-2024 18:30)";
+
+        if (parsedDateTime.error === "past_date") {
+          errorMsg =
+            "❌ Das Datum liegt in der Vergangenheit. Bitte gib ein zukünftiges Datum ein.";
+        }
+
         bot.sendMessage(
           chatId,
-          "Ungültiges Datumsformat. Bitte verwende DD-MM-YYYY:\n\nOder tippe /cancel um abzubrechen.",
+          errorMsg + "\n\n⚠️ Oder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
         );
         return;
       }
-      userStates[chatId].event.date = text;
-      userStates[chatId].step = "time";
-      bot.sendMessage(
-        chatId,
-        "Gib jetzt die Startzeit des Events ein (Format: HH:MM):\n\nOder tippe /cancel um abzubrechen.",
-        {
-          disable_notification: true,
-        }
-      );
-      break;
-    case "time":
-      if (!isValidTime(text)) {
-        bot.sendMessage(
-          chatId,
-          "Ungültiges Zeitformat. Bitte verwende HH:MM:\n\nOder tippe /cancel um abzubrechen.",
-          {
-            disable_notification: true,
-          }
-        );
-        return;
-      }
-      userStates[chatId].event.time = text;
+
+      userStates[chatId].event.date = parsedDateTime.dateString;
+      userStates[chatId].event.time = parsedDateTime.timeString;
+      userStates[chatId].event.startTimestamp = parsedDateTime.timestamp;
       userStates[chatId].step = "location";
       bot.sendMessage(
         chatId,
-        "Wo findet das Event statt?\n\nOder tippe /cancel um abzubrechen.",
+        "📍 Perfekt! Wo findet das Event statt? (Adresse, Ort oder Veranstaltungsname):\n\n⚠️ Oder tippe /cancel um abzubrechen.",
         {
           disable_notification: true,
         }
@@ -272,18 +389,18 @@ const handleEventCreationStep = async (bot, msg) => {
           input: text,
           data: locationData,
         };
-        const confirmationMessage = `Ich habe folgende Location gefunden:\n${locationData.display_name}\n\nIst das korrekt?`;
+        const confirmationMessage = `📍 Ich habe folgende Location gefunden:\n\n${locationData.display_name}\n\n✅ Ist das korrekt?`;
         const keyboard = {
           inline_keyboard: [
             [
               {
-                text: "Ja, das ist korrekt",
+                text: "✅ Ja, das ist korrekt",
                 callback_data: "confirm_location",
               },
             ],
             [
               {
-                text: "Nein, erneut eingeben",
+                text: "🔄 Nein, erneut eingeben",
                 callback_data: "retry_location",
               },
             ],
@@ -296,7 +413,7 @@ const handleEventCreationStep = async (bot, msg) => {
       } else {
         bot.sendMessage(
           chatId,
-          "Ich konnte keine passende Location finden. Bitte versuche es erneut oder gib eine genauere Beschreibung ein:\n\nOder tippe /cancel um abzubrechen.",
+          "❌ Ich konnte keine passende Location finden. Bitte versuche es erneut oder gib eine genauere Beschreibung ein:\n\n⚠️ Oder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
@@ -308,38 +425,45 @@ const handleEventCreationStep = async (bot, msg) => {
       showOptionalFieldsMenu(bot, chatId);
       break;
     case "end_date":
-      if (!isValidDate(text)) {
-        bot.sendMessage(
-          chatId,
-          "Ungültiges Datumsformat. Bitte verwende DD-MM-YYYY:\n\nOder tippe /cancel um abzubrechen.",
-          {
-            disable_notification: true,
-          }
-        );
-        return;
-      }
-      userStates[chatId].event.end_date = text;
-      userStates[chatId].step = "end_time";
-      bot.sendMessage(
-        chatId,
-        "Gib jetzt die Endzeit des Events ein (Format: HH:MM):\n\nOder tippe /cancel um abzubrechen.",
-        {
-          disable_notification: true,
+      const parsedEndDateTime = parseDateTime(text);
+
+      if (!parsedEndDateTime.isValid) {
+        let errorMsg =
+          "❌ Ungültiges Format. Bitte verwende eines der folgenden Formate:\n• DD.MM.YY HH:MM (z.B. 25.12.24 20:00)\n• DD.MM.YYYY HH:MM (z.B. 25.12.2024 20:00)\n• DD-MM-YY HH:MM (z.B. 25-12-24 20:00)\n• DD-MM-YYYY HH:MM (z.B. 25-12-2024 20:00)";
+
+        if (parsedEndDateTime.error === "past_date") {
+          errorMsg =
+            "❌ Das Enddatum liegt in der Vergangenheit. Bitte gib ein zukünftiges Datum ein.";
         }
-      );
-      break;
-    case "end_time":
-      if (!isValidTime(text)) {
+
         bot.sendMessage(
           chatId,
-          "Ungültiges Zeitformat. Bitte verwende HH:MM:\n\nOder tippe /cancel um abzubrechen.",
+          errorMsg + "\n\n⚠️ Oder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
         );
         return;
       }
-      userStates[chatId].event.end_time = text;
+
+      // Check if end date is after start date
+      if (
+        userStates[chatId].event.startTimestamp &&
+        parsedEndDateTime.timestamp <= userStates[chatId].event.startTimestamp
+      ) {
+        bot.sendMessage(
+          chatId,
+          "❌ Das Enddatum muss nach dem Startdatum liegen. Bitte gib ein späteres Datum ein.\n\n⚠️ Oder tippe /cancel um abzubrechen.",
+          {
+            disable_notification: true,
+          }
+        );
+        return;
+      }
+
+      userStates[chatId].event.end_date = parsedEndDateTime.dateString;
+      userStates[chatId].event.end_time = parsedEndDateTime.timeString;
+      userStates[chatId].event.endTimestamp = parsedEndDateTime.timestamp;
       showOptionalFieldsMenu(bot, chatId);
       break;
     case "image":
@@ -349,7 +473,7 @@ const handleEventCreationStep = async (bot, msg) => {
           // Get the highest resolution photo
           const photo = msg.photo[msg.photo.length - 1];
 
-          bot.sendMessage(chatId, "Bild wird hochgeladen...", {
+          bot.sendMessage(chatId, "🖼️ Bild wird hochgeladen...", {
             disable_notification: true,
           });
 
@@ -364,7 +488,7 @@ const handleEventCreationStep = async (bot, msg) => {
 
           userStates[chatId].event.image = blossomUrl;
 
-          bot.sendMessage(chatId, "Bild erfolgreich hochgeladen! ✅", {
+          bot.sendMessage(chatId, "✅ Bild erfolgreich hochgeladen!", {
             disable_notification: true,
           });
 
@@ -373,7 +497,7 @@ const handleEventCreationStep = async (bot, msg) => {
           console.error("Error uploading image:", error);
           bot.sendMessage(
             chatId,
-            "Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.",
+            "❌ Fehler beim Hochladen des Bildes. Bitte versuche es erneut.",
             {
               disable_notification: true,
             }
@@ -386,7 +510,7 @@ const handleEventCreationStep = async (bot, msg) => {
       } else {
         bot.sendMessage(
           chatId,
-          "Bitte senden Sie ein Bild oder eine Bild-URL:",
+          "🖼️ Bitte sende ein Bild oder gib eine Bild-URL ein:\n\n⚠️ Oder tippe /cancel um abzubrechen.",
           {
             disable_notification: true,
           }
@@ -404,7 +528,7 @@ const handleCancellation = (bot, chatId) => {
   delete userStates[chatId];
   bot.sendMessage(
     chatId,
-    "Meetup-Erstellung abgebrochen. Du kannst jederzeit mit /meetup_vorschlagen neu beginnen.",
+    "❌ Meetup-Erstellung abgebrochen. Du kannst jederzeit mit /meetup_vorschlagen neu beginnen.",
     {
       disable_notification: true,
     }
@@ -414,13 +538,6 @@ const handleCancellation = (bot, chatId) => {
 const showOptionalFieldsMenu = (bot, chatId) => {
   // Check if event is already submitted
   if (userStates[chatId] && userStates[chatId].submitted) {
-    bot.sendMessage(
-      chatId,
-      "Dein Event wurde bereits zur Genehmigung eingereicht. Du kannst mit /meetup_vorschlagen ein neues Event erstellen.",
-      {
-        disable_notification: true,
-      }
-    );
     return;
   }
 
@@ -428,20 +545,28 @@ const showOptionalFieldsMenu = (bot, chatId) => {
     inline_keyboard: [
       [
         {
-          text: "Enddatum hinzufügen",
+          text: "📅 Enddatum hinzufügen",
           callback_data: "add_end_date",
         },
       ],
       [
         {
-          text: "Bild hochladen (URL oder Foto)",
+          text: "🖼️ Bild hochladen (URL oder Foto)",
           callback_data: "add_image",
         },
       ],
       [
         {
-          text: "URL hinzufügen",
+          text: "🔗 URL hinzufügen",
           callback_data: "add_url",
+        },
+      ],
+      [
+        {
+          text: userStates[chatId]?.anonymous
+            ? "🔓 Nicht anonym (Telegram-Name zeigen)"
+            : "🔒 Anonym (Telegram-Name verstecken)",
+          callback_data: "toggle_anonymous",
         },
       ],
       [
@@ -452,7 +577,7 @@ const showOptionalFieldsMenu = (bot, chatId) => {
       ],
       [
         {
-          text: "Abbrechen",
+          text: "❌ Abbrechen",
           callback_data: "cancel_creation",
         },
       ],
@@ -460,10 +585,15 @@ const showOptionalFieldsMenu = (bot, chatId) => {
   };
   bot.sendMessage(
     chatId,
-    "Möchtest du optionale Felder hinzufügen, das Event zur Genehmigung senden oder abbrechen?",
+    `✨ Möchtest du optionale Felder hinzufügen, das Event zur Genehmigung senden oder abbrechen?\n\n${
+      userStates[chatId]?.anonymous
+        ? "🔒 <b>Anonymer Modus aktiviert</b> - Dein Telegram-Name wird nicht angezeigt"
+        : "🔓 <b>Öffentlicher Modus</b> - Dein Telegram-Name wird angezeigt"
+    }`,
     {
       reply_markup: JSON.stringify(keyboard),
       disable_notification: true,
+      parse_mode: "HTML",
     }
   );
 };
@@ -498,7 +628,7 @@ const handleOptionalField = (bot, chatId, field) => {
     case "end_date":
       bot.sendMessage(
         chatId,
-        "Bitte gib das Enddatum des Events ein (Format: DD-MM-YYYY):",
+        "📅 Bitte gib das Enddatum und die Endzeit des Events ein.\n\nUnterstützte Formate:\n• DD.MM.YY HH:MM (z.B. 25.12.24 20:00)\n• DD.MM.YYYY HH:MM (z.B. 25.12.2024 20:00)\n• DD-MM-YY HH:MM (z.B. 25-12-24 20:00)\n• DD-MM-YYYY HH:MM (z.B. 25-12-2024 20:00)\n\n⚠️ Oder tippe /cancel um abzubrechen.",
         {
           disable_notification: true,
         }
@@ -507,16 +637,20 @@ const handleOptionalField = (bot, chatId, field) => {
     case "image":
       bot.sendMessage(
         chatId,
-        "Lade ein Bild hoch oder füge eine Bild-URL hinzu:",
+        "🖼️ Lade ein Bild hoch oder füge eine Bild-URL hinzu:\n\n⚠️ Oder tippe /cancel um abzubrechen.",
         {
           disable_notification: true,
         }
       );
       break;
     case "url":
-      bot.sendMessage(chatId, "Füge eine URL hinzu:", {
-        disable_notification: true,
-      });
+      bot.sendMessage(
+        chatId,
+        "🔗 Füge eine URL hinzu (z.B. zur Anmeldung oder für weitere Infos):\n\n⚠️ Oder tippe /cancel um abzubrechen.",
+        {
+          disable_notification: true,
+        }
+      );
       break;
   }
 };
@@ -550,37 +684,57 @@ const sendEventForApproval = async (bot, callbackQuery, userChatId) => {
 
   const adminChatId = config.ADMIN_CHAT_ID;
   const userInfo = userStates[userChatId];
-  let userIdentifier = userInfo.username
-    ? `@${userInfo.username}`
-    : `${userInfo.firstName} ${userInfo.lastName}`.trim();
-  if (!userIdentifier) {
-    userIdentifier = "Unbekannter Benutzer";
+
+  // Check if anonymous mode is enabled
+  let userIdentifier;
+  let adminUserIdentifier; // For admin view
+  if (userStates[userChatId]?.anonymous) {
+    userIdentifier = "Anonymer Benutzer";
+    // Show real user to admin for moderation purposes
+    adminUserIdentifier = userInfo.username
+      ? `@${userInfo.username} (anonym)`
+      : `${userInfo.firstName} ${userInfo.lastName}`.trim() + " (anonym)";
+  } else {
+    userIdentifier = userInfo.username
+      ? `@${userInfo.username}`
+      : `${userInfo.firstName} ${userInfo.lastName}`.trim();
+    adminUserIdentifier = userIdentifier;
+  }
+
+  if (!adminUserIdentifier) {
+    adminUserIdentifier = "Unbekannter Benutzer";
   }
 
   let message = `
-Neuer Event-Vorschlag von ${userIdentifier}:
-Titel: ${eventDetails.title}
-Datum: ${eventDetails.date}
-Zeit: ${eventDetails.time}
-Ort: ${eventDetails.location}
-Beschreibung: ${eventDetails.description}
+🎉 <b>Neuer Event-Vorschlag</b>
+
+👤 <b>Ersteller:</b> ${adminUserIdentifier}
+📝 <b>Titel:</b> ${eventDetails.title}
+📅 <b>Datum:</b> ${eventDetails.date}
+🕐 <b>Zeit:</b> ${eventDetails.time}
+📍 <b>Ort:</b> ${eventDetails.location}
+📄 <b>Beschreibung:</b> ${eventDetails.description}
 `;
 
-  if (eventDetails.end_date) message += `Enddatum: ${eventDetails.end_date}\n`;
-  if (eventDetails.end_time) message += `Endzeit: ${eventDetails.end_time}\n`;
-  if (eventDetails.image) message += `Bild-URL: ${eventDetails.image}\n`;
+  if (eventDetails.end_date)
+    message += `📅 <b>Enddatum:</b> ${eventDetails.end_date}\n`;
+  if (eventDetails.end_time)
+    message += `🕐 <b>Endzeit:</b> ${eventDetails.end_time}\n`;
+  if (eventDetails.image)
+    message += `🖼️ <b>Bild-URL:</b> ${eventDetails.image}\n`;
+  if (eventDetails.url) message += `🔗 <b>URL:</b> ${eventDetails.url}\n`;
 
-  message += "\nMöchtest du dieses Event genehmigen?";
+  message += "\n❓ <b>Möchtest du dieses Event genehmigen?</b>";
 
   const keyboard = {
     inline_keyboard: [
       [
         {
-          text: "Genehmigen",
+          text: "✅ Genehmigen",
           callback_data: `approve_meetup_${userChatId}`,
         },
         {
-          text: "Ablehnen",
+          text: "❌ Ablehnen",
           callback_data: `reject_meetup_${userChatId}`,
         },
       ],
@@ -591,7 +745,7 @@ Beschreibung: ${eventDetails.description}
 
   // Edit the message to remove the buttons and show submission confirmation
   bot.editMessageText(
-    "Dein Event wurde zur Genehmigung eingereicht! ✅\n\nWir werden dich benachrichtigen, sobald er überprüft wurde.",
+    "✅ Dein Event wurde zur Genehmigung eingereicht! 🎉\n\nWir werden dich benachrichtigen, sobald es überprüft wurde.",
     {
       chat_id: userChatId,
       message_id: msg.message_id,
@@ -601,6 +755,7 @@ Beschreibung: ${eventDetails.description}
 
   bot.sendMessage(adminChatId, message, {
     reply_markup: JSON.stringify(keyboard),
+    parse_mode: "HTML",
   });
 
   // Log the event suggestion
@@ -615,13 +770,15 @@ const handleConfirmLocation = (bot, callbackQuery) => {
   const msg = callbackQuery.message;
   const chatId = msg.chat.id;
 
-  const locationData = userStates[chatId].tempLocation.data;
+  // Handle both old and new tempLocation structure
+  const locationData =
+    userStates[chatId].tempLocation?.data || userStates[chatId].tempLocation;
 
   userStates[chatId].event.location = locationData.display_name;
   userStates[chatId].step = "description";
   bot.sendMessage(
     chatId,
-    "Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\nOder tippe /cancel um abzubrechen.",
+    "📝 Großartig! Zum Schluss, gib bitte eine kurze Beschreibung des Events ein:\n\n⚠️ Oder tippe /cancel um abzubrechen.",
     {
       disable_notification: true,
     }
@@ -635,11 +792,86 @@ const handleRetryLocation = (bot, callbackQuery) => {
   userStates[chatId].step = "location";
   bot.sendMessage(
     chatId,
-    "Okay, bitte gib die Location erneut ein:\n\nOder tippe /cancel um abzubrechen.",
+    "📍 Okay, bitte gib die Location erneut ein:\n\n⚠️ Oder tippe /cancel um abzubrechen.",
     {
       disable_notification: true,
     }
   );
+};
+
+const handleToggleAnonymous = (bot, callbackQuery) => {
+  const msg = callbackQuery.message;
+  const chatId = msg.chat.id;
+
+  // Toggle anonymous mode
+  if (!userStates[chatId]) {
+    userStates[chatId] = {};
+  }
+  userStates[chatId].anonymous = !userStates[chatId].anonymous;
+
+  // Update the message with new button state
+  const keyboard = {
+    inline_keyboard: [
+      [
+        {
+          text: "📅 Enddatum hinzufügen",
+          callback_data: "add_end_date",
+        },
+      ],
+      [
+        {
+          text: "🖼️ Bild hochladen (URL oder Foto)",
+          callback_data: "add_image",
+        },
+      ],
+      [
+        {
+          text: "🔗 URL hinzufügen",
+          callback_data: "add_url",
+        },
+      ],
+      [
+        {
+          text: userStates[chatId]?.anonymous
+            ? "🔓 Nicht anonym (Telegram-Name zeigen)"
+            : "🔒 Anonym (Telegram-Name verstecken)",
+          callback_data: "toggle_anonymous",
+        },
+      ],
+      [
+        {
+          text: "🚀 Zur Genehmigung senden",
+          callback_data: "send_for_approval",
+        },
+      ],
+      [
+        {
+          text: "❌ Abbrechen",
+          callback_data: "cancel_creation",
+        },
+      ],
+    ],
+  };
+
+  bot.editMessageText(
+    `✨ Möchtest du optionale Felder hinzufügen, das Event zur Genehmigung senden oder abbrechen?\n\n${
+      userStates[chatId]?.anonymous
+        ? "🔒 <b>Anonymer Modus aktiviert</b> - Dein Telegram-Name wird nicht angezeigt"
+        : "🔓 <b>Öffentlicher Modus</b> - Dein Telegram-Name wird angezeigt"
+    }`,
+    {
+      chat_id: chatId,
+      message_id: msg.message_id,
+      reply_markup: JSON.stringify(keyboard),
+      parse_mode: "HTML",
+    }
+  );
+
+  bot.answerCallbackQuery(callbackQuery.id, {
+    text: userStates[chatId].anonymous
+      ? "Anonymer Modus aktiviert"
+      : "Öffentlicher Modus aktiviert",
+  });
 };
 
 export {
@@ -652,4 +884,6 @@ export {
   handleCancellation,
   handleConfirmLocation,
   handleRetryLocation,
+  handleToggleAnonymous,
+  prepareEventForNostr,
 };

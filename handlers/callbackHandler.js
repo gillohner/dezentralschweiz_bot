@@ -10,6 +10,7 @@ import {
   handleRetryLocation,
   handleOptionalField,
   handleAdminMeetupSuggestionApproval,
+  handleToggleAnonymous,
 } from "./meetupHandlers/meetupSuggestionHandler.js";
 import { handleAdminMeetupDeletionApproval } from "./meetupHandlers/meetupDeletionHandler.js";
 import { deleteMessage } from "../utils/helpers.js";
@@ -67,6 +68,8 @@ const handleCallbackQuery = async (bot, callbackQuery) => {
     handleConfirmLocation(bot, callbackQuery);
   } else if (action === "retry_location") {
     handleRetryLocation(bot, callbackQuery);
+  } else if (action === "toggle_anonymous") {
+    handleToggleAnonymous(bot, callbackQuery);
   }
 };
 

@@ -22,7 +22,6 @@ const config = {
   LOGS_CHAT_ID: process.env.LOGS_CHAT_ID,
   BOT_NSEC: process.env.BOT_NSEC,
   EVENT_CALENDAR_NADDR: process.env.EVENT_CALENDAR_NADDR,
-  BOT_PUBKEY: process.env.BOT_PUBKEY,
   BLOSSOM_SERVER: process.env.BLOSSOM_SERVER || "https://blossom.nostr.build",
 };
 
