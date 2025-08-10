@@ -56,7 +56,8 @@ const approveEvent = async (bot, callbackQuery, eventId) => {
 
     // Also add the event to the calendar
     const decoded = nip19.decode(config.EVENT_CALENDAR_NADDR);
-    const { pubkey: calendarPubkey, identifier: calendarIdentifier } = decoded.data;
+    const { pubkey: calendarPubkey, identifier: calendarIdentifier } =
+      decoded.data;
     await addEventToCalendar(ndk, event, calendarPubkey, calendarIdentifier);
 
     // Update the message to show approval

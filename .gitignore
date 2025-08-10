@@ -1,1 +1,4 @@
 /.env
+.vscode/mcp.json
+node_modules/
+.env
