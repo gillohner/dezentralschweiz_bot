@@ -99,27 +99,75 @@ const parseDateTime = (input) => {
 
 // Add helper function to ensure proper event data for Nostr
 const prepareEventForNostr = (eventDetails) => {
+  // Convert DD.MM.YYYY format to ISO 8601 YYYY-MM-DD for Nostr events
+  const convertToISODate = (dateString) => {
+    if (!dateString) return null;
+    
+    // Handle DD.MM.YYYY or DD.MM.YY format
+    const parts = dateString.split('.');
+    if (parts.length === 3) {
+      let [day, month, year] = parts;
+      
+      // Convert 2-digit year to 4-digit if needed
+      if (year.length === 2) {
+        const yearNum = parseInt(year);
+        year = yearNum < 50 ? '20' + year : '19' + year;
+      }
+      
+      // Validate the date parts
+      const dayNum = parseInt(day);
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+      
+      if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) {
+        console.error("Invalid date parts:", { day: dayNum, month: monthNum, year: yearNum });
+        return null;
+      }
+      
+      // Pad day and month with leading zeros if needed
+      day = day.padStart(2, '0');
+      month = month.padStart(2, '0');
+      
+      // Validate the resulting date is real
+      const testDate = new Date(yearNum, monthNum - 1, dayNum);
+      if (testDate.getFullYear() !== yearNum || 
+          testDate.getMonth() !== monthNum - 1 || 
+          testDate.getDate() !== dayNum) {
+        console.error("Invalid date:", dateString);
+        return null;
+      }
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    console.error("Invalid date format:", dateString);
+    return null;
+  };
+
   // Ensure we have proper timestamps for Nostr event
   if (!eventDetails.startTimestamp && eventDetails.date && eventDetails.time) {
-    const fallbackDateTime = parseDateTime(
-      `${eventDetails.date} ${eventDetails.time}`
-    );
+    const fallbackDateTime = parseDateTime(`${eventDetails.date} ${eventDetails.time}`);
     if (fallbackDateTime.isValid) {
       eventDetails.startTimestamp = fallbackDateTime.timestamp;
     }
   }
 
-  if (
-    eventDetails.end_date &&
-    eventDetails.end_time &&
-    !eventDetails.endTimestamp
-  ) {
-    const fallbackEndDateTime = parseDateTime(
-      `${eventDetails.end_date} ${eventDetails.end_time}`
-    );
+  if (eventDetails.end_date && eventDetails.end_time && !eventDetails.endTimestamp) {
+    const fallbackEndDateTime = parseDateTime(`${eventDetails.end_date} ${eventDetails.end_time}`);
     if (fallbackEndDateTime.isValid) {
       eventDetails.endTimestamp = fallbackEndDateTime.timestamp;
     }
+  }
+
+  // Convert dates to ISO format for Nostr compatibility
+  if (eventDetails.date) {
+    eventDetails.isoStartDate = convertToISODate(eventDetails.date);
+    console.log("Converted start date:", eventDetails.date, "->", eventDetails.isoStartDate);
+  }
+
+  if (eventDetails.end_date) {
+    eventDetails.isoEndDate = convertToISODate(eventDetails.end_date);
+    console.log("Converted end date:", eventDetails.end_date, "->", eventDetails.isoEndDate);
   }
 
   return eventDetails;
@@ -245,6 +293,23 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     try {
       // Prepare event data with proper timestamps
       const preparedEventDetails = prepareEventForNostr(eventDetails);
+      
+      // Validate that we have proper ISO dates for Nostr
+      if (!preparedEventDetails.isoStartDate) {
+        console.error("Failed to convert start date to ISO format:", eventDetails.date);
+        bot.sendMessage(
+          userChatId,
+          "Es gab einen Fehler beim Verarbeiten des Datums. Bitte kontaktiere den Administrator."
+        );
+        return;
+      }
+
+      console.log("Publishing event with ISO dates:", {
+        start: preparedEventDetails.isoStartDate,
+        end: preparedEventDetails.isoEndDate,
+        startTimestamp: preparedEventDetails.startTimestamp,
+        endTimestamp: preparedEventDetails.endTimestamp
+      });
 
       const publishedEvent = await publishEventToNostr(preparedEventDetails);
       console.log("Event published to Nostr:", publishedEvent);
@@ -765,6 +830,19 @@ const sendEventForApproval = async (bot, callbackQuery, userChatId) => {
     text: "Event eingereicht!",
   });
 };
+
+// NOTE: The publishEventToNostr function should use:
+// - eventDetails.isoStartDate for the "start" tag (YYYY-MM-DD format)
+// - eventDetails.isoEndDate for the "end" tag (YYYY-MM-DD format) if present
+// - eventDetails.startTimestamp for time-based events (Unix timestamp)
+// - eventDetails.endTimestamp for time-based events (Unix timestamp) if present
+//
+// For NIP-52 calendar events:
+// - Date-based events (kind 31922) use "start" and "end" tags with YYYY-MM-DD format
+// - Time-based events (kind 31923) use "start" and "end" tags with Unix timestamps
+//
+// The user-friendly display dates (eventDetails.date, eventDetails.time) should be 
+// kept for display purposes but not used in the Nostr event tags
 
 const handleConfirmLocation = (bot, callbackQuery) => {
   const msg = callbackQuery.message;
