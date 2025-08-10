@@ -300,15 +300,22 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
 
   // Check if anonymous mode is enabled
   let userIdentifier;
+  let adminUserIdentifier; // For admin view
   if (userStates[userChatId]?.anonymous) {
     userIdentifier = "Anonymer Benutzer";
+    // Show real user to admin for moderation purposes
+    adminUserIdentifier = userInfo.username
+      ? `@${userInfo.username} (anonym)`
+      : `${userInfo.firstName} ${userInfo.lastName}`.trim() + " (anonym)";
   } else {
     userIdentifier = userInfo.username
       ? `@${userInfo.username}`
       : `${userInfo.firstName} ${userInfo.lastName}`.trim();
-    if (!userIdentifier) {
-      userIdentifier = "Unbekannter Benutzer";
-    }
+    adminUserIdentifier = userIdentifier;
+  }
+
+  if (!adminUserIdentifier) {
+    adminUserIdentifier = "Unbekannter Benutzer";
   }
 
   if (isApproved) {
@@ -322,6 +329,14 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     }
 
     try {
+      // Add Telegram user link only if not anonymous
+      if (!userStates[userChatId]?.anonymous && userInfo.username) {
+        eventDetails.tg_user_link = `https://t.me/${userInfo.username}`;
+      }
+
+      // Add anonymous flag to eventDetails
+      eventDetails.anonymous = userStates[userChatId]?.anonymous || false;
+
       // Prepare event data with proper timestamps
       const preparedEventDetails = prepareEventForNostr(eventDetails);
 
@@ -365,7 +380,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
         bot,
         "EVENT_APPROVED",
         eventDetails,
-        userIdentifier,
+        adminUserIdentifier,
         `Veröffentlicht auf Meetstr: ${meetstrLink}`
       );
     } catch (error) {
@@ -380,7 +395,7 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
         bot,
         "EVENT_APPROVED",
         eventDetails,
-        userIdentifier,
+        adminUserIdentifier,
         "Fehler beim Veröffentlichen auf Nostr"
       );
     }
@@ -391,7 +406,12 @@ const handleAdminMeetupSuggestionApproval = async (bot, callbackQuery) => {
     );
 
     // Log the event rejection
-    await logEventAction(bot, "EVENT_REJECTED", eventDetails, userIdentifier);
+    await logEventAction(
+      bot,
+      "EVENT_REJECTED",
+      eventDetails,
+      adminUserIdentifier
+    );
   }
 
   // Clean up user state after processing
@@ -434,9 +454,6 @@ const handleEventCreationStep = async (bot, msg) => {
 
   switch (step) {
     case "title":
-      const username = msg.chat.username;
-      userStates[chatId].event.tg_user_link = `https://t.me/${username}`;
-
       userStates[chatId].event.title = text;
       userStates[chatId].step = "datetime";
       bot.sendMessage(
@@ -858,7 +875,12 @@ const sendEventForApproval = async (bot, callbackQuery, userChatId) => {
   });
 
   // Log the event suggestion
-  await logEventAction(bot, "EVENT_SUGGESTED", eventDetails, userIdentifier);
+  await logEventAction(
+    bot,
+    "EVENT_SUGGESTED",
+    eventDetails,
+    adminUserIdentifier
+  );
 
   bot.answerCallbackQuery(callbackQuery.id, {
     text: "Event eingereicht!",
