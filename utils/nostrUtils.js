@@ -1,6 +1,5 @@
 // utils/nostrUtils.js
 import crypto from "crypto";
-import ngeohash from "ngeohash";
 import { finalizeEvent } from "nostr-tools/pure";
 import { getPublicKey, nip19 } from "nostr-tools";
 import NDK, { NDKEvent } from "@nostr-dev-kit/ndk";
@@ -214,6 +213,10 @@ const fetchEvents = async (eventReferences) => {
 
 const publishEventToNostr = async (eventDetails) => {
   console.log("Publishing event to Nostr:", eventDetails);
+  console.log("ISO Start Date:", eventDetails.isoStartDate);
+  console.log("ISO End Date:", eventDetails.isoEndDate);
+  console.log("Start Timestamp:", eventDetails.startTimestamp);
+  console.log("End Timestamp:", eventDetails.endTimestamp);
 
   const privateKey = config.BOT_NSEC;
   if (!privateKey) {
@@ -237,20 +240,27 @@ const publishEventToNostr = async (eventDetails) => {
 
     const eventId = crypto.randomBytes(16).toString("hex");
 
-    // Convert DD-MM-YYYY to YYYY-MM-DD for Date constructor
-    const convertDateFormat = (ddmmyyyy) => {
-      const [day, month, year] = ddmmyyyy.split("-");
-      return `${year}-${month}-${day}`;
-    };
+    // Use the pre-converted ISO date and timestamp from prepareEventForNostr
+    let startTimestamp;
+    if (eventDetails.startTimestamp) {
+      startTimestamp = eventDetails.startTimestamp;
+    } else if (eventDetails.isoStartDate && eventDetails.time) {
+      // Fallback: create timestamp from ISO date and time
+      startTimestamp = Math.floor(
+        new Date(
+          `${eventDetails.isoStartDate}T${eventDetails.time}`
+        ).getTime() / 1000
+      );
+    } else {
+      throw new Error("No valid start timestamp or ISO date available");
+    }
 
-    const isoDate = convertDateFormat(eventDetails.date);
-    const startTimestamp = Math.floor(
-      new Date(`${isoDate}T${eventDetails.time}`).getTime() / 1000
-    );
-    const geohash = ngeohash.encode(
-      eventDetails.latitude,
-      eventDetails.longitude
-    );
+    // Validate the timestamp
+    if (!startTimestamp || isNaN(startTimestamp)) {
+      throw new Error(`Invalid start timestamp: ${startTimestamp}`);
+    }
+
+    console.log("Using start timestamp:", startTimestamp);
 
     eventTemplate = {
       kind: 31923, // Time-Based Calendar Event
@@ -271,10 +281,15 @@ const publishEventToNostr = async (eventDetails) => {
     if (eventDetails.tg_user_link)
       eventTemplate.tags.push(["r", eventDetails.tg_user_link]);
 
-    if (eventDetails.end_date && eventDetails.end_time) {
-      const isoEndDate = convertDateFormat(eventDetails.end_date);
+    if (eventDetails.endTimestamp) {
+      eventTemplate.tags.push(["end", eventDetails.endTimestamp.toString()]);
+      eventTemplate.tags.push(["end_tzid", "Europe/Zurich"]);
+    } else if (eventDetails.isoEndDate && eventDetails.end_time) {
+      // Fallback: create timestamp from ISO end date and time
       const endTimestamp = Math.floor(
-        new Date(`${isoEndDate}T${eventDetails.end_time}`).getTime() / 1000
+        new Date(
+          `${eventDetails.isoEndDate}T${eventDetails.end_time}`
+        ).getTime() / 1000
       );
       eventTemplate.tags.push(["end", endTimestamp.toString()]);
       eventTemplate.tags.push(["end_tzid", "Europe/Zurich"]);
