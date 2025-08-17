@@ -217,10 +217,6 @@ const communityLinks = {
       url: "https://dezentralshop.ch",
     },
     {
-      name: "SHOPINBIT 🛒",
-      url: "https://shopinbit.ch/",
-    },
-    {
       name: "Funtoshi ♟️",
       url: "https://funtoshi.com/",
     },
