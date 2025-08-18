@@ -22,8 +22,8 @@ const scheduleWeeklyMeetupPost = (bot) => {
     await postWeeklyMeetups(bot, true); // Force update on scheduled run
   });
 
-  // Schedule daily check for new events at 7 AM (except Monday since that's handled above)
-  schedule.scheduleJob("0 7 * * 2-7,0", async () => {
+  // Schedule daily check for new events at 7 AM (exclude Monday)
+  schedule.scheduleJob("0 7 * * 2-7", async () => {
     console.log("Running daily check for new events");
     await checkForNewEvents(bot);
   });
@@ -40,6 +40,16 @@ const checkAndUpdateOnStartup = async (bot) => {
 
 // Check for new events and post immediately if found
 const checkForNewEvents = async (bot) => {
+  // Skip if today is Monday
+  const today = new Date();
+  if (today.getDay() === 1) {
+    // 1 = Monday
+    console.log(
+      "It's Monday, skipping daily new event check (handled by weekly post)"
+    );
+    return;
+  }
+
   let chatId = config.MEETUP_CHAT_ID;
   if (!chatId) {
     console.error("MEETUP_CHAT_ID is not set in the environment variables");
@@ -147,7 +157,6 @@ const postWeeklyMeetups = async (
 
   try {
     const botPinnedMessages = await getBotPinnedMessages(bot, chatId);
-    const botInfo = await bot.getMe();
     let shouldPost = true;
 
     if (isScheduledRun) {
