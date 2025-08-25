@@ -86,7 +86,7 @@ const checkForNewEvents = async (bot) => {
       console.log(`Found ${newEvents.length} new event(s):`, newEvents);
 
       // Post the updated message immediately
-      await postWeeklyMeetups(bot, true, "Neue Events hinzugefügt! 🎉\n\n");
+      await postWeeklyMeetups(bot, true, "");
 
       console.log("Posted update due to new events");
     } else {
