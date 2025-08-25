@@ -1,11 +1,7 @@
 // scheduledTasks.js
 import schedule from "node-schedule";
 import { fetchMeetupsLogic } from "./handlers/meetupHandlers/meetupDisplayingHandler.js";
-import {
-  deleteMessage,
-  sendAndStoreMessage,
-  editAndStoreMessage,
-} from "./utils/helpers.js";
+import { deleteMessage, sendAndStoreMessage } from "./utils/helpers.js";
 import config from "./bot/config.js";
 
 // Store information about previously posted events to detect new ones

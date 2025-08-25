@@ -5,7 +5,7 @@ import { nip19 } from "nostr-tools";
 import { fetchLocationData } from "../../utils/openstreetmap/nominatim.js";
 import config from "../../bot/config.js";
 import userStates from "../../userStates.js";
-import { deleteMessage } from "../../utils/helpers.js";
+import { deleteMessage, deleteMessageWithTimeout } from "../../utils/helpers.js";
 import { logEventAction } from "../../utils/logUtils.js";
 import { isValidDate, isValidTime } from "../../utils/validators.js";
 import { uploadImageToBlossom } from "../../utils/blossomUpload.js";
@@ -236,23 +236,29 @@ setInterval(cleanupProcessedActions, 60 * 60 * 1000);
 
 const handleMeetupSuggestion = (bot, msg) => {
   if (msg.chat.type !== "private") {
-    bot.sendMessage(
-      msg.chat.id,
-      "Dieser Befehl funktioniert nur in privaten Nachrichten. Bitte sende mir eine direkte Nachricht, um ein Meetup vorzuschlagen.",
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Zum Bot",
-                url: `https://t.me/${bot.username}`,
-              },
+    bot
+      .sendMessage(
+        msg.chat.id,
+        "Dieser Befehl funktioniert nur in privaten Nachrichten. Bitte sende mir eine direkte Nachricht, um ein Meetup vorzuschlagen.",
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Zum Bot",
+                  url: `https://t.me/${bot.username}`,
+                },
+              ],
             ],
-          ],
-        },
-        disable_notification: true,
-      }
-    );
+          },
+          disable_notification: true,
+        }
+      )
+      .then((sent) => {
+        // Auto-delete the info message after 60 seconds to reduce group clutter
+        deleteMessageWithTimeout(bot, msg.chat.id, sent.message_id, 60 * 1000);
+      })
+      .catch((err) => console.error("Failed to send info message:", err));
     return;
   }
   const chatId = msg.chat.id;
