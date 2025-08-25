@@ -24,6 +24,9 @@ const config = {
   EVENT_CALENDAR_NADDR: process.env.EVENT_CALENDAR_NADDR,
   BLOSSOM_SERVER_URL:
     process.env.BLOSSOM_SERVER_URL || "https://blossom.nostr.build",
+  NITTER_INSTANCE_URL: (
+    process.env.NITTER_INSTANCE_URL || "https://xcancel.com"
+  ).replace(/\/$/, ""),
 };
 
 export default config;
