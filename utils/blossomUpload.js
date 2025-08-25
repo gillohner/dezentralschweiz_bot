@@ -77,7 +77,7 @@ export const uploadImageToBlossom = async (
   const filename = `upload.${ext}`;
 
   // Create the Blossom client
-  const server = config.BLOSSOM_SERVER || "https://blossom.nostr.build";
+  const server = config.BLOSSOM_SERVER_URL || "https://blossom.nostr.build";
   const client = new BlossomClient(server, botSigner);
 
   // Construct a File-like object
