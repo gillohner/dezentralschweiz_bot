@@ -35,14 +35,6 @@ jobs:
             cd /root/dezentralschweiz_bot
             git pull origin main
             npm install
-            # Create logs directory if it doesn't exist
             mkdir -p logs
-            # Configure Node.js to prefer IPv4
-            export NODE_OPTIONS="--dns-result-order=ipv4first"
-            # Stop the app if running
-            pm2 stop dezentralschweiz_bot || true
-            pm2 delete dezentralschweiz_bot || true
-            # Set Node.js options for IPv4 preference in PM2
-            cd /root/pm2
-            pm2 start ecosystem.config.cjs --node-args="--dns-result-order=ipv4first"
+            pm2 restart dezentralschweiz_bot
             pm2 save
