@@ -43,5 +43,6 @@ jobs:
             pm2 stop dezentralschweiz_bot || true
             pm2 delete dezentralschweiz_bot || true
             # Set Node.js options for IPv4 preference in PM2
+            cd /root/pm2
             pm2 start ecosystem.config.cjs --node-args="--dns-result-order=ipv4first"
             pm2 save
