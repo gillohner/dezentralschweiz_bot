@@ -225,6 +225,20 @@ const communityLinks = {
       url: "https://yourdevice.ch/",
     },
   ],
+   Konferenzen: [
+    {
+      name: "Bitcoin Baden",
+      url: "https://bitcoinbaden.ch",
+    },
+    {
+      name: "Swiss Bitcoin Conference",
+      url: "https://swiss-bitcoin-conference.com",
+    },
+    {
+      name: "Bitcoin Block",
+      url: "https://bitcoinblock.study",
+    },
+  ],
 };
 
 export default communityLinks;
