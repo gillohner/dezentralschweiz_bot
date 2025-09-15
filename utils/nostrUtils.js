@@ -13,13 +13,6 @@ const getNDK = () => {
     ndkInstance = new NDK({
       explicitRelayUrls: [
         "wss://relay.damus.io",
-        "wss://nos.lol",
-        "wss://relay.primal.net",
-        "wss://relay.nostr.band",
-        "wss://relay.snort.social",
-        "wss://purplepag.es",
-        "wss://relay.current.fyi",
-        "wss://nostr.wine",
       ],
       // Increase timeout for VPS environments
       relayConnectTimeout: 30000,
@@ -277,6 +270,17 @@ const publishEventToNostr = async (eventDetails) => {
         ["p", publicKey, "", "host"],
       ],
     };
+
+    // Add back-reference to calendar (so event knows which calendar it belongs to)
+    try {
+      const decodedCal = nip19.decode(calendarNaddr);
+      if (decodedCal?.type === "naddr" && decodedCal.data?.pubkey && decodedCal.data?.identifier) {
+        const calendarRef = `31924:${decodedCal.data.pubkey}:${decodedCal.data.identifier}`;
+        eventTemplate.tags.push(["a", calendarRef, "calendar-parent"]);
+      }
+    } catch (e) {
+      console.warn("Failed to decode calendar naddr for back-reference:", e.message);
+    }
 
     if (eventDetails.tg_user_link)
       eventTemplate.tags.push(["r", eventDetails.tg_user_link]);

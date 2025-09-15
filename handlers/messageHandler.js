@@ -10,7 +10,6 @@ import userStates from "../userStates.js";
 import { handleDeletionInput } from "./meetupHandlers/meetupDeletionHandler.js";
 import { handleEventCreationStep } from "./meetupHandlers/meetupSuggestionHandler.js";
 import { TidyURL } from "tidy-url";
-import config from "../bot/config.js";
 
 const handleMessage = (bot, msg) => {
   if (msg.chat.type === "private") {
@@ -47,10 +46,9 @@ const handleMessage = (bot, msg) => {
         originalUrl.includes("twitter.com") ||
         originalUrl.includes("x.com")
       ) {
-        const nitterBase = config.NITTER_INSTANCE_URL;
         const nitterUrl = cleanedUrl.replace(
           /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)/,
-          nitterBase
+          "https://nitter.yourdevice.ch"
         );
         twitterUrls.push(`${nitterUrl}`);
       }
@@ -115,7 +113,7 @@ const handleMessage = (bot, msg) => {
     // Check for shitcoiner names (Bitcoin skeptics and scammers)
     let matchedShitcoiner = "";
     const isShitcoiner = shitcoinerTriggerWords.some((name) => {
-      const match = new RegExp(`\\b${name}\\b`, "i").test(lowerText);
+      const match = new RegExp(`\\b${name}\\b`, 'i').test(lowerText);
       if (match) {
         matchedShitcoiner = name;
       }
@@ -124,12 +122,8 @@ const handleMessage = (bot, msg) => {
 
     if (isShitcoiner) {
       const response =
-        "🚨 " +
-        matchedShitcoiner.toUpperCase() +
-        " 🚨\n\n" +
-        shitcoinerResponses[
-          Math.floor(Math.random() * shitcoinerResponses.length)
-        ];
+        "🚨 " + matchedShitcoiner.toUpperCase() + " 🚨\n\n" +
+        shitcoinerResponses[Math.floor(Math.random() * shitcoinerResponses.length)];
       bot.sendMessage(msg.chat.id, response, {
         parse_mode: "HTML",
         disable_notification: true,

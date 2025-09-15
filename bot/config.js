@@ -8,10 +8,7 @@ const config = {
   DEFAULT_RELAYS: process.env.DEFAULT_RELAYS?.split(",")
     .map((relay) => relay.trim())
     .filter(Boolean) || [
-    "wss://relay.nostr.band",
     "wss://relay.damus.io",
-    "wss://nos.lol",
-    "wss://relay.primal.net",
   ],
   NADDR_LIST:
     process.env.NADDR_LIST?.split(",")
