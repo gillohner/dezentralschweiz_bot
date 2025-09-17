@@ -10,6 +10,7 @@ import userStates from "../userStates.js";
 import { handleDeletionInput } from "./meetupHandlers/meetupDeletionHandler.js";
 import { handleEventCreationStep } from "./meetupHandlers/meetupSuggestionHandler.js";
 import { TidyURL } from "tidy-url";
+import config from "../bot/config.js";
 
 const handleMessage = (bot, msg) => {
   if (msg.chat.type === "private") {
@@ -46,9 +47,10 @@ const handleMessage = (bot, msg) => {
         originalUrl.includes("twitter.com") ||
         originalUrl.includes("x.com")
       ) {
+        const nitterBase = config.NITTER_INSTANCE_URL;
         const nitterUrl = cleanedUrl.replace(
           /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)/,
-          "https://nitter.yourdevice.ch"
+          nitterBase
         );
         twitterUrls.push(`${nitterUrl}`);
       }
