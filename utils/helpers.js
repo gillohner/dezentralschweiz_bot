@@ -62,20 +62,29 @@ const cleanUrl = (url) => {
 };
 
 const formatLocation = async (event) => {
+  // Handle cases where locationData is null or missing
+  if (!event.locationData) {
+    // Fallback to raw location string from event metadata if available
+    if (event.metadata?.location) {
+      return `📍 ${escapeHTML(event.metadata.location)}\n`;
+    }
+    return "📍 Ort nicht verfügbar\n";
+  }
+
   let result = `📍 ${
     event.locationData.formattedName
       ? event.locationData.formattedName
       : event.locationData.formattedAddress
   }`;
-  let googleMapsLink = cleanUrl(event.locationData.mapLinks.google);
-  let osmLink = cleanUrl(event.locationData.mapLinks.osm);
-  let appleMapsLink = cleanUrl(event.locationData.mapLinks.apple);
-  let btcMapLink = cleanUrl(event.locationData.mapLinks.btcmap);
+  let googleMapsLink = cleanUrl(event.locationData.mapLinks?.google);
+  let osmLink = cleanUrl(event.locationData.mapLinks?.osm);
+  let appleMapsLink = cleanUrl(event.locationData.mapLinks?.apple);
+  let btcMapLink = cleanUrl(event.locationData.mapLinks?.btcmap);
   let paymentEmojis = "";
 
-  if (event.locationData.paymentMethods.lightning) paymentEmojis += "⚡";
-  if (event.locationData.paymentMethods.contactless) paymentEmojis += "🛜";
-  if (event.locationData.paymentMethods.onChain) paymentEmojis += "⛓️";
+  if (event.locationData.paymentMethods?.lightning) paymentEmojis += "⚡";
+  if (event.locationData.paymentMethods?.contactless) paymentEmojis += "🛜";
+  if (event.locationData.paymentMethods?.onChain) paymentEmojis += "⛓️";
 
   if (paymentEmojis) {
     result += ` ${paymentEmojis}`;
