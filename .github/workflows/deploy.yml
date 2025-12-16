@@ -36,5 +36,19 @@ jobs:
             git pull origin main
             npm install
             mkdir -p logs
-            pm2 restart dezentralschweiz_bot
+            
+            # Install PM2 globally if not already installed
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+            
+            # Check if app is already running in PM2
+            if pm2 describe dezentralschweiz_bot &> /dev/null; then
+              echo "App exists in PM2, restarting..."
+              pm2 restart dezentralschweiz_bot
+            else
+              echo "App not found in PM2, starting new instance..."
+              pm2 start bot.js --name dezentralschweiz_bot
+            fi
+            
             pm2 save
